@@ -1,0 +1,44 @@
+{
+  "run_id": "41912f93-c635-4bf8-8f8d-b6619c4d9db4",
+  "started_at": "2026-09-21T16:17:38+00:00",
+  "completed_at": "2026-09-21T16:17:44+00:00",
+  "status": "limited",
+  "products_requested": 1,
+  "reviews_extracted": 0,
+  "page_types_seen": [
+    "accessible_no_reviews",
+    "sign_in"
+  ],
+  "products": [
+    {
+      "asin": "B09XS7JWHH",
+      "label": "Sony WH-1000XM5",
+      "reviews_extracted": 0,
+      "fetches": [
+        {
+          "url": "https://www.amazon.com/product-reviews/B09XS7JWHH/?reviewerType=all_reviews&pageNumber=1",
+          "status": 200,
+          "final_url": "https://www.amazon.com/ax/claim?arb=d55d2735-1ad9-4786-895d-f0242a8bb4de",
+          "title": "Sign in",
+          "page_type": "sign_in",
+          "response_bytes": 220336,
+          "response_sha256": "4cd81e7874721dc4c1466776f72a594a994b2e93e739a4da44de39bae9f78986",
+          "reviews_extracted": 0,
+          "error": null
+        },
+        {
+          "url": "https://www.amazon.com/dp/B09XS7JWHH",
+          "status": 200,
+          "final_url": "https://www.amazon.com/dp/B09XS7JWHH",
+          "title": "Sony WH-1000XM5 Wireless Industry Leading Noise Canceling Headphones with Auto Noise Canceling Optimizer, Crystal Clear Hands-Free Calling, Black + Free Shipping - Amazon",
+          "page_type": "accessible_no_reviews",
+          "response_bytes": 3200549,
+          "response_sha256": "b43a48b9d5d3bc721417dd997af57af28ccb0e9a981a05680a16e7c5d8df5fc5",
+          "reviews_extracted": 0,
+          "error": null
+        }
+      ]
+    }
+  ],
+  "recommendation": "Do not rely on anonymous Amazon HTML for recurring collection; evaluate an authorized source or alternative live review source."
+}

@@ -1,0 +1,46 @@
+{
+  "runs_compared": 2,
+  "repeatable": false,
+  "runs": [
+    {
+      "run_id": "41912f93-c635-4bf8-8f8d-b6619c4d9db4",
+      "started_at": "2026-09-21T16:17:38+00:00",
+      "reviews_extracted": 0,
+      "fetches": [
+        {
+          "requested_url": "https://www.amazon.com/product-reviews/B09XS7JWHH/?reviewerType=all_reviews&pageNumber=1",
+          "status": 200,
+          "page_type": "sign_in",
+          "reviews_extracted": 0
+        },
+        {
+          "requested_url": "https://www.amazon.com/dp/B09XS7JWHH",
+          "status": 200,
+          "page_type": "accessible_no_reviews",
+          "reviews_extracted": 0
+        }
+      ]
+    },
+    {
+      "run_id": "657632c4-7182-4fe0-807c-de6e782f6878",
+      "started_at": "2026-09-21T16:17:44+00:00",
+      "reviews_extracted": 13,
+      "fetches": [
+        {
+          "requested_url": "https://www.amazon.com/product-reviews/B09XS7JWHH/?reviewerType=all_reviews&pageNumber=1",
+          "status": 200,
+          "page_type": "sign_in",
+          "reviews_extracted": 0
+        },
+        {
+          "requested_url": "https://www.amazon.com/dp/B09XS7JWHH",
+          "status": 200,
+          "page_type": "reviews_present",
+          "reviews_extracted": 13
+        }
+      ]
+    }
+  ],
+  "finding": "The same input produced different review availability across consecutive runs.",
+  "recommendation": "Do not use anonymous Amazon HTML as the primary recurring source without authorized, stable access; evaluate an approved API/provider or alternative source."
+}
