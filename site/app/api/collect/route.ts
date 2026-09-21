@@ -95,7 +95,7 @@ export async function POST(request: Request) {
       }
     }
     const collected = reviews.length > 0;
-    return NextResponse.json({ asin, status: collected ? "collected" : "limited", pageType, reviews, checkedUrls, collectedAt: new Date().toISOString(), message: collected ? `${reviews.length} review records were exposed and normalized after ${checkedUrls.length} live-source check${checkedUrls.length === 1 ? "" : "s"}.` : requestError ? `Amazon could not be reached after ${checkedUrls.length} checks. The workflow recorded the request failure as an access limitation.` : `Amazon exposed no review rows after ${checkedUrls.length} checks. Try the same product again later; the returned page can vary by request context.` });
+    return NextResponse.json({ asin, status: collected ? "collected" : "limited", pageType, reviews, checkedUrls, collectedAt: new Date().toISOString(), message: collected ? `${reviews.length} review${reviews.length === 1 ? " was" : "s were"} returned after ${checkedUrls.length} source check${checkedUrls.length === 1 ? "" : "s"}.` : requestError ? `Amazon could not be reached after ${checkedUrls.length} attempts. Try again in a few minutes.` : `No reviews were returned after ${checkedUrls.length} source checks. Amazon may return a different page on another run.` });
   } catch (reason) {
     const message = reason instanceof Error ? reason.message : "The collection request failed.";
     return NextResponse.json({ error: message }, { status: /ASIN|Amazon product URL/.test(message) ? 400 : 502 });
