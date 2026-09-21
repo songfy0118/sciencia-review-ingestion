@@ -59,11 +59,11 @@ function classify(html: string) {
   return "accessible_no_reviews";
 }
 
-async function requestPage(url: string) {
+async function requestPage(url: string, attempt: number) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 12000);
   try {
-    const response = await fetch(url, { headers: { "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126 Safari/537.36", "accept-language": "en-US,en;q=0.9", accept: "text/html,application/xhtml+xml" }, redirect: "follow", signal: controller.signal });
+    const response = await fetch(url, { headers: { "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126 Safari/537.36", "accept-language": attempt % 2 ? "en-US,en;q=0.8" : "en-US,en;q=0.9", accept: "text/html,application/xhtml+xml" }, redirect: "follow", cache: "no-store", signal: controller.signal });
     return { response, html: await response.text() };
   } finally { clearTimeout(timer); }
 }
@@ -73,14 +73,18 @@ export async function POST(request: Request) {
     const body = (await request.json()) as { product?: unknown };
     if (typeof body.product !== "string") return NextResponse.json({ error: "A product ASIN or URL is required." }, { status: 400 });
     const asin = extractAsin(body.product);
-    const urls = [`https://www.amazon.com/product-reviews/${asin}/?reviewerType=all_reviews&pageNumber=1`, `https://www.amazon.com/dp/${asin}`];
+    const urls = [
+      `https://www.amazon.com/product-reviews/${asin}/?reviewerType=all_reviews&pageNumber=1`,
+      `https://www.amazon.com/dp/${asin}?th=1`,
+      `https://www.amazon.com/dp/${asin}?ref_=cm_cr_arp_d_product_top`,
+    ];
     let pageType = "request_error";
     let reviews: ReturnType<typeof parseReviews> = [];
     const checkedUrls: string[] = [];
     let requestError = "";
-    for (const url of urls) {
+    for (const [attempt, url] of urls.entries()) {
       try {
-        const { response, html } = await requestPage(url);
+        const { response, html } = await requestPage(url, attempt);
         checkedUrls.push(url); pageType = response.ok ? classify(html) : `http_${response.status}`;
         if (response.ok && pageType === "reviews_present") reviews = parseReviews(html, asin, response.url || url);
         if (reviews.length) break;
@@ -91,7 +95,7 @@ export async function POST(request: Request) {
       }
     }
     const collected = reviews.length > 0;
-    return NextResponse.json({ asin, status: collected ? "collected" : "limited", pageType, reviews, checkedUrls, collectedAt: new Date().toISOString(), message: collected ? `${reviews.length} review records were exposed by the live source and normalized for inspection.` : requestError ? "The hosting network could not reach Amazon for this run. The workflow recorded the request failure as an access limitation." : `The live source returned “${pageType.replaceAll("_", " ")}”. The workflow recorded the limitation without bypassing access controls.` });
+    return NextResponse.json({ asin, status: collected ? "collected" : "limited", pageType, reviews, checkedUrls, collectedAt: new Date().toISOString(), message: collected ? `${reviews.length} review records were exposed and normalized after ${checkedUrls.length} live-source check${checkedUrls.length === 1 ? "" : "s"}.` : requestError ? `Amazon could not be reached after ${checkedUrls.length} checks. The workflow recorded the request failure as an access limitation.` : `Amazon exposed no review rows after ${checkedUrls.length} checks. Try the same product again later; the returned page can vary by request context.` });
   } catch (reason) {
     const message = reason instanceof Error ? reason.message : "The collection request failed.";
     return NextResponse.json({ error: message }, { status: /ASIN|Amazon product URL/.test(message) ? 400 : 502 });

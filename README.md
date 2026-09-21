@@ -36,7 +36,7 @@ python -m review_ingestion.cli `
   --report data/run_report.json
 ```
 
-The collector makes at most two requests per product: the dedicated review page first, then the product page if the first response contains no review records. It waits between requests and does not attempt to bypass sign-in, CAPTCHA, or other access controls.
+The collector makes a small bounded set of requests per product: the dedicated review page first, followed by limited product-page checks when no review records are exposed. It does not attempt to bypass sign-in, CAPTCHA, or other access controls.
 
 ## Output
 
