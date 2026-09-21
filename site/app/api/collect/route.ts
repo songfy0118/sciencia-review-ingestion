@@ -1,0 +1,87 @@
+import { NextResponse } from "next/server";
+
+export const runtime = "edge";
+const ASIN = /^[A-Z0-9]{10}$/;
+const ASIN_IN_URL = /(?:\/dp\/|\/product-reviews\/|\/gp\/product\/)([A-Z0-9]{10})(?:[/?]|$)/i;
+
+function extractAsin(value: string) {
+  const trimmed = value.trim();
+  if (ASIN.test(trimmed.toUpperCase())) return trimmed.toUpperCase();
+  const match = trimmed.match(ASIN_IN_URL);
+  if (!match) throw new Error("Enter a 10-character Amazon ASIN or a valid Amazon product URL.");
+  return match[1].toUpperCase();
+}
+
+function decodeHtml(value: string) {
+  return value.replace(/<br\s*\/?\s*>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function capture(block: string, hook: string) {
+  const pattern = new RegExp(`data-hook=["']${hook}["'][^>]*>([\\s\\S]*?)<\\/[^>]+>`, "i");
+  return decodeHtml(block.match(pattern)?.[1] ?? "");
+}
+
+function parseReviews(html: string, asin: string, sourceUrl: string) {
+  const starts = [...html.matchAll(/<[^>]+data-hook=["']review["'][^>]*>/gi)];
+  const reviews = [];
+  for (let index = 0; index < starts.length && reviews.length < 25; index += 1) {
+    const start = starts[index].index ?? 0;
+    const end = starts[index + 1]?.index ?? Math.min(html.length, start + 80000);
+    const block = html.slice(start, end);
+    const id = block.match(/\bid=["']([^"']+)["']/i)?.[1] ?? `${asin}-${index + 1}`;
+    const body = capture(block, "review-body") || capture(block, "reviewText");
+    if (!body) continue;
+    const ratingText = capture(block, "review-star-rating") || capture(block, "cmps-review-star-rating");
+    const parsedRating = Number(ratingText.match(/([0-5](?:\.\d)?)/)?.[1] ?? "");
+    reviews.push({ reviewId: id, productAsin: asin, title: capture(block, "review-title") || capture(block, "reviewTitle"), body, rating: Number.isFinite(parsedRating) ? parsedRating : null, reviewDate: capture(block, "review-date"), verifiedPurchase: /verified purchase/i.test(capture(block, "avp-badge")), sourceUrl });
+  }
+  return reviews;
+}
+
+function classify(html: string) {
+  const lowered = html.toLowerCase();
+  if (lowered.includes("enter the characters you see below") || lowered.includes("captcha")) return "captcha";
+  if (/<title[^>]*>\s*(amazon )?sign-in\s*<\/title>/i.test(html)) return "sign_in";
+  if (/data-hook=["']review["']/i.test(html)) return "reviews_present";
+  if (lowered.includes("sorry! something went wrong")) return "error_page";
+  return "accessible_no_reviews";
+}
+
+async function requestPage(url: string) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+  try {
+    const response = await fetch(url, { headers: { "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126 Safari/537.36", "accept-language": "en-US,en;q=0.9", accept: "text/html,application/xhtml+xml" }, redirect: "follow", signal: controller.signal });
+    return { response, html: await response.text() };
+  } finally { clearTimeout(timer); }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = (await request.json()) as { product?: unknown };
+    if (typeof body.product !== "string") return NextResponse.json({ error: "A product ASIN or URL is required." }, { status: 400 });
+    const asin = extractAsin(body.product);
+    const urls = [`https://www.amazon.com/product-reviews/${asin}/?reviewerType=all_reviews&pageNumber=1`, `https://www.amazon.com/dp/${asin}`];
+    let pageType = "request_error";
+    let reviews: ReturnType<typeof parseReviews> = [];
+    const checkedUrls: string[] = [];
+    let requestError = "";
+    for (const url of urls) {
+      try {
+        const { response, html } = await requestPage(url);
+        checkedUrls.push(url); pageType = response.ok ? classify(html) : `http_${response.status}`;
+        if (response.ok && pageType === "reviews_present") reviews = parseReviews(html, asin, response.url || url);
+        if (reviews.length) break;
+      } catch (reason) {
+        checkedUrls.push(url);
+        pageType = "request_error";
+        requestError = reason instanceof Error ? reason.name : "RequestError";
+      }
+    }
+    const collected = reviews.length > 0;
+    return NextResponse.json({ asin, status: collected ? "collected" : "limited", pageType, reviews, checkedUrls, collectedAt: new Date().toISOString(), message: collected ? `${reviews.length} review records were exposed by the live source and normalized for inspection.` : requestError ? "The hosting network could not reach Amazon for this run. The workflow recorded the request failure as an access limitation." : `The live source returned “${pageType.replaceAll("_", " ")}”. The workflow recorded the limitation without bypassing access controls.` });
+  } catch (reason) {
+    const message = reason instanceof Error ? reason.message : "The collection request failed.";
+    return NextResponse.json({ error: message }, { status: /ASIN|Amazon product URL/.test(message) ? 400 : 502 });
+  }
+}

@@ -10,6 +10,20 @@ The current scope is intentionally narrow:
 - final local storage: SQLite;
 - excluded for now: category-wide discovery, product comparison, sentiment analysis, and model training.
 
+## Public web demo
+
+The `site/` directory contains a small public interface for the same feasibility test. A visitor can enter one Amazon ASIN or product URL, run a limited live-source check, inspect any review records exposed to the request, and download the normalized rows as CSV. The web route makes no attempt to log in, solve CAPTCHA, paginate, or bypass an access control. A blocked or unreachable request is displayed as a documented feasibility result rather than treated as collected data.
+
+The web demo does not persist public visitor queries or review text. Durable structured storage remains in the Python prototype's SQLite output so anonymous visitors cannot use the deployment as a public data-writing service.
+
+Run the website locally with:
+
+```powershell
+cd site
+npm ci
+npm run dev
+```
+
 ## Run
 
 Python 3.11 or newer is recommended. The prototype uses only the Python standard library.
