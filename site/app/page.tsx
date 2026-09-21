@@ -1,173 +1,179 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { CheckCircle2, Database, Download, Loader2, Search, ShieldAlert } from "lucide-react";
-
-type Review = {
-  reviewId: string;
-  productAsin: string;
-  title: string;
-  body: string;
-  rating: number | null;
-  reviewDate: string;
-  verifiedPurchase: boolean;
-  sourceUrl: string;
-};
-
-type CollectResult = {
-  asin: string;
-  status: "collected" | "limited" | "error";
-  pageType: string;
-  reviews: Review[];
-  checkedUrls: string[];
-  message: string;
-  collectedAt: string;
-};
+import { FormEvent, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { ArrowDownToLine, Check, ChevronRight, CircleAlert, Database, ExternalLink, Loader2, Search } from "lucide-react";
+import { extractAsin, resultMessage, sourceLabel, toCsv, type CollectResult } from "../lib/review-data";
 
 const EXAMPLE = "B09XS7JWHH";
+type ExportFormat = "csv" | "json";
 
-function csvCell(value: unknown) {
-  const content = value == null ? "" : String(value);
-  return `"${content.replaceAll('"', '""')}"`;
-}
-
-function downloadFile(filename: string, content: string, type: string) {
-  const url = URL.createObjectURL(new Blob([content], { type }));
+function download(filename: string, text: string, type: string) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
   const link = document.createElement("a");
   link.href = url;
   link.download = filename;
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(url);
-}
-
-function sourceLabel(pageType: string) {
-  const labels: Record<string, string> = {
-    reviews_present: "Reviews available",
-    accessible_no_reviews: "No reviews returned",
-    request_error: "Request failed",
-    sign_in: "Sign-in page returned",
-    captcha: "Verification page returned",
-    error_page: "Source error",
-  };
-  return labels[pageType] ?? pageType.replaceAll("_", " ");
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export default function Home() {
-  const [input, setInput] = useState(EXAMPLE);
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CollectResult | null>(null);
   const [error, setError] = useState("");
+  const [inputError, setInputError] = useState("");
+  const [query, setQuery] = useState("");
+  const [ratingFilter, setRatingFilter] = useState("all");
+  const [format, setFormat] = useState<ExportFormat>("csv");
+  const [downloadNote, setDownloadNote] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const resultRef = useRef<HTMLHeadingElement>(null);
 
+  const visibleReviews = useMemo(() => (result?.reviews ?? []).filter((review) =>
+    (ratingFilter === "all" || review.rating === Number(ratingFilter)) &&
+    (review.title + " " + review.body + " " + review.review_id).toLowerCase().includes(query.trim().toLowerCase()),
+  ), [result, query, ratingFilter]);
   const average = useMemo(() => {
-    const ratings = result?.reviews.map((review) => review.rating).filter((rating): rating is number => rating != null) ?? [];
-    return ratings.length ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : null;
+    const ratings = (result?.reviews ?? []).flatMap((review) => review.rating == null ? [] : [review.rating]);
+    return ratings.length ? (ratings.reduce((sum, value) => sum + value, 0) / ratings.length).toFixed(1) : null;
   }, [result]);
+  const message = result ? resultMessage(result) : null;
 
   async function collect(event: FormEvent) {
     event.preventDefault();
-    setLoading(true);
+    if (loading) return;
     setError("");
-    setResult(null);
-    try {
-      const response = await fetch("/api/collect", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ product: input }),
-      });
-      const data = (await response.json()) as CollectResult & { error?: string };
-      if (!response.ok) throw new Error(data.error || "The run could not be completed.");
-      setResult(data);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "The run could not be completed.");
-    } finally {
-      setLoading(false);
+    setInputError("");
+    let asin: string;
+    try { asin = extractAsin(input); } catch (reason) {
+      setInputError((reason as Error).message);
+      inputRef.current?.focus();
+      return;
     }
+    setLoading(true);
+    setResult(null);
+    setQuery("");
+    setRatingFilter("all");
+    setDownloadNote("");
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 45000);
+    try {
+      const response = await fetch("/api/collect", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ product: asin }), signal: controller.signal });
+      const data = await response.json() as CollectResult & { error?: string };
+      if (!response.ok) throw new Error(data.error || "The run could not be completed. Please try again.");
+      setResult(data as CollectResult);
+      requestAnimationFrame(() => resultRef.current?.focus({ preventScroll: true }));
+    } catch (reason) {
+      setError(controller.signal.aborted ? "This run took too long. Please try again later." : reason instanceof TypeError ? "Could not connect to the server. Check your connection and try again." : reason instanceof Error ? reason.message : "The run could not be completed. Please try again.");
+    } finally { clearTimeout(timer); setLoading(false); }
   }
 
-  function downloadCsv() {
+  function exportReviews() {
     if (!result?.reviews.length) return;
-    const headers = ["review_id", "product_asin", "title", "body", "rating", "review_date", "verified_purchase", "source_url"];
-    const rows = result.reviews.map((review) => [review.reviewId, review.productAsin, review.title, review.body, review.rating, review.reviewDate, review.verifiedPurchase, review.sourceUrl]);
-    const csv = [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\n");
-    downloadFile(`${result.asin}-reviews.csv`, `\ufeff${csv}`, "text/csv;charset=utf-8");
-  }
-
-  function downloadJson() {
-    if (!result?.reviews.length) return;
-    downloadFile(`${result.asin}-reviews.json`, JSON.stringify(result.reviews, null, 2), "application/json");
+    const text = format === "csv" ? toCsv(result.reviews) : JSON.stringify(result.reviews, null, 2) + "\n";
+    download(`${result.asin}-reviews.${format}`, text, format === "csv" ? "text/csv;charset=utf-8" : "application/json");
+    setDownloadNote(`${format.toUpperCase()} download started. All ${result.reviews.length} records are included.`);
   }
 
   return (
-    <main>
+    <>
+      <a className="skipLink" href="#workspace">Skip to collection</a>
       <header className="topbar">
-        <div className="brand"><span className="brandMark">S</span><span>Sciencia</span><span className="brandSection">Review Collector</span></div>
-        <span className="prototypeTag">Prototype</span>
+        <Link className="brand" href="/" aria-label="Sciencia Review Collector home"><Database size={21} aria-hidden="true" /><strong>Sciencia</strong><span>Review Collector</span></Link>
+        <span className="tag">Research preview</span>
       </header>
-
-      <section className="workspace">
-        <div className="intro">
-          <p className="eyebrow">AMAZON US</p>
-          <h1>Collect product reviews</h1>
-          <p className="lede">Enter an Amazon ASIN or product URL to retrieve the reviews currently available and export them as structured data.</p>
+      <main id="workspace" className="workspace">
+        <div className="pageHeading">
+          <p className="eyebrow">PRODUCT DATA / AMAZON US</p>
+          <h1>Review collector</h1>
+          <p>Collect available reviews for one product. Inspect the records, then download your data.</p>
         </div>
 
-        <form className="collector" onSubmit={collect}>
-          <label htmlFor="product">Amazon ASIN or product URL</label>
-          <div className="inputRow">
-            <div className="inputWrap"><Search size={18} /><input id="product" value={input} onChange={(event) => setInput(event.target.value)} placeholder="Example: B09XS7JWHH" /></div>
-            <button type="submit" disabled={loading || !input.trim()}>{loading ? <><Loader2 className="spin" size={17} />Running</> : "Run collection"}</button>
-          </div>
-          <p className="inputHelp">Accepts a 10-character ASIN or an amazon.com product URL.</p>
-        </form>
-
-        {error && <div className="notice error"><ShieldAlert size={20} /><div><strong>Run failed</strong><p>{error}</p></div></div>}
-
-        {!result && !error && !loading && (
-          <section className="aboutPanel">
-            <div><strong>Output fields</strong><p>Review ID, ASIN, rating, title, review text, date, verified purchase status, and source URL.</p></div>
-            <div><strong>Current scope</strong><p>One product per run. Results can be downloaded as CSV or JSON.</p></div>
-            <div><strong>Source access</strong><p>Uses public Amazon pages. The collector does not sign in or bypass access controls.</p></div>
-          </section>
-        )}
-
-        {result && (
-          <section className="results">
-            <div className={`notice ${result.status === "collected" ? "success" : "warning"}`}>
-              {result.status === "collected" ? <CheckCircle2 size={20} /> : <ShieldAlert size={20} />}
-              <div><strong>{result.status === "collected" ? "Collection complete" : "No reviews returned"}</strong><p>{result.message}</p></div>
-            </div>
-
-            <div className="runMeta">
-              <span>Run completed {new Date(result.collectedAt).toLocaleString("en-US")}</span>
-              <span>{result.checkedUrls.length} source check{result.checkedUrls.length === 1 ? "" : "s"}</span>
-            </div>
-
-            <div className="metrics">
-              <article><small>ASIN</small><strong>{result.asin}</strong></article>
-              <article><small>REVIEWS RETURNED</small><strong>{result.reviews.length}</strong></article>
-              <article><small>AVERAGE RATING</small><strong>{average == null ? "—" : `${average.toFixed(1)} / 5`}</strong></article>
-              <article><small>SOURCE STATUS</small><strong>{sourceLabel(result.pageType)}</strong></article>
-            </div>
-
-            <div className="tablePanel">
-              <div className="tableHeader">
-                <div><Database size={18} /><strong>Review records</strong></div>
-                <div className="downloadGroup">
-                  <button className="secondary" onClick={downloadJson} disabled={!result.reviews.length}><Download size={15} />JSON</button>
-                  <button className="secondary" onClick={downloadCsv} disabled={!result.reviews.length}><Download size={15} />CSV</button>
-                </div>
+        <div className="setupGrid">
+          <section className="panel inputPanel" aria-labelledby="input-heading">
+            <h2 id="input-heading">Product</h2>
+            <form onSubmit={collect} noValidate>
+              <label htmlFor="product">Amazon ASIN or product URL</label>
+              <div className="inputRow">
+                <div className={`inputWrap ${inputError ? "invalid" : ""}`}><Search size={18} aria-hidden="true" /><input ref={inputRef} id="product" name="product" autoComplete="off" autoCapitalize="off" spellCheck={false} value={input} disabled={loading} aria-invalid={!!inputError} aria-describedby={inputError ? "product-error product-help" : "product-help"} onChange={(event) => { setInput(event.target.value); setInputError(""); }} placeholder="Paste an ASIN or https://www.amazon.com/dp/..." /></div>
+                <button type="submit" className="primary" disabled={loading}>{loading ? <><Loader2 size={17} className="spin" aria-hidden="true" />Collecting…</> : "Collect reviews"}</button>
               </div>
-              {result.reviews.length ? (
-                <div className="tableScroll"><table><thead><tr><th>Rating</th><th>Review</th><th>Date</th><th>Verified purchase</th></tr></thead><tbody>{result.reviews.map((review) => <tr key={review.reviewId}><td className="rating">{review.rating == null ? "—" : review.rating.toFixed(1)}</td><td><strong>{review.title || "Untitled review"}</strong><p>{review.body}</p><small className="reviewId">{review.reviewId}</small></td><td>{review.reviewDate || "—"}</td><td>{review.verifiedPurchase ? "Yes" : "No"}</td></tr>)}</tbody></table></div>
-              ) : (
-                <div className="noRows"><strong>No review records were returned.</strong><p>Amazon may return a different page depending on the request. Wait a moment and run the same product again.</p></div>
-              )}
-            </div>
+              <p id="product-help" className="help">An ASIN is Amazon’s 10-character product ID. Amazon.com links only.</p>
+              {inputError && <p id="product-error" className="fieldError" role="alert">{inputError}</p>}
+              <button className="textButton" type="button" disabled={loading} onClick={() => { setInput(EXAMPLE); setInputError(""); inputRef.current?.focus(); }}>Use example: {EXAMPLE}</button>
+            </form>
           </section>
-        )}
-      </section>
+          <aside className="scopePanel" aria-labelledby="scope-heading">
+            <h2 id="scope-heading">What to expect</h2>
+            <p>A sample of publicly available reviews. This preview does not collect the full review history.</p>
+            <ul><li>One product per run</li><li>Up to three page requests</li><li>Original review text and language</li></ul>
+          </aside>
+        </div>
 
-      <footer><span>Sciencia Review Collector</span><span>Collection and structured export prototype</span></footer>
-    </main>
+        <div className="liveStatus" role="status" aria-live="polite">
+          {loading && <div className="loadingState"><Loader2 size={19} className="spin" aria-hidden="true" /><div><strong>Checking Amazon for available reviews</strong><p>This can take up to 40 seconds.</p></div></div>}
+        </div>
+        {error && <div className="notice error" role="alert"><CircleAlert size={19} aria-hidden="true" /><div><strong>Collection failed</strong><p>{error}</p></div></div>}
+
+        {!result && !loading && <section className="panel readyPanel" aria-labelledby="ready-heading"><Database size={26} aria-hidden="true" /><h2 id="ready-heading">Your results will appear here</h2><p>Enter a product above to get started. Each record includes the review text, rating, date, and source.</p></section>}
+
+        {result && message && <section aria-labelledby="results-heading" className="results">
+          <div className="sectionHeading"><h2 ref={resultRef} tabIndex={-1} id="results-heading">Collection results</h2><span>{new Date(result.collected_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" })}</span></div>
+          <div role="status" className={`notice ${result.status === "collected" ? "success" : result.status === "error" ? "error" : "warning"}`}>
+            {result.reviews.length ? <Check size={19} aria-hidden="true" /> : <CircleAlert size={19} aria-hidden="true" />}
+            <div><strong>{message.title}</strong><p>{message.text}</p></div>
+          </div>
+          <dl className="metrics">
+            <div><dt>Product ASIN</dt><dd><a href={`https://www.amazon.com/dp/${result.asin}`} target="_blank" rel="noreferrer">{result.asin}<ExternalLink size={13} aria-hidden="true" /><span className="srOnly"> on Amazon (opens in a new tab)</span></a></dd></div>
+            <div><dt>Reviews collected</dt><dd>{result.reviews.length}<small> in this run</small></dd></div>
+            <div><dt>Sample average</dt><dd>{average ?? "—"}{average && <small> / 5 stars</small>}</dd></div>
+            <div><dt>Pages checked</dt><dd>{result.checks.length}<small> of 3 maximum</small></dd></div>
+          </dl>
+
+          <section className="panel recordsPanel" aria-labelledby="records-heading">
+            <div className="tableHeader">
+              <div><h3 id="records-heading">Review records <span className="count">{result.reviews.length}</span></h3><p>Download all collected records as CSV or JSON.</p></div>
+              <div className="exportControls"><label className="srOnly" htmlFor="format">Export format</label><select id="format" value={format} onChange={(event) => setFormat(event.target.value as ExportFormat)}><option value="csv">CSV</option><option value="json">JSON</option></select><button className="secondary" onClick={exportReviews} disabled={!result.reviews.length}><ArrowDownToLine size={16} aria-hidden="true" />Download</button></div>
+            </div>
+            <p className="srOnly" role="status">{downloadNote}</p>
+            {result.reviews.length > 0 ? <>
+              <div className="tableTools">
+                <label className="filterSearch"><Search size={16} aria-hidden="true" /><span className="srOnly">Search collected reviews</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search these reviews" /></label>
+                <label className="ratingFilter">Rating<select value={ratingFilter} onChange={(event) => setRatingFilter(event.target.value)}><option value="all">All ratings</option>{[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} {rating === 1 ? "star" : "stars"}</option>)}</select></label>
+                <span role="status">{visibleReviews.length} of {result.reviews.length} shown</span>
+              </div>
+              {visibleReviews.length ? <div className="tableScroll" tabIndex={0} role="region" aria-label="Collected reviews table, scroll horizontally on small screens"><table>
+                <caption className="srOnly">Reviews collected for {result.asin}. Average and count describe this sample only.</caption>
+                <thead><tr><th scope="col">Rating</th><th scope="col">Review</th><th scope="col">Review date</th><th scope="col">Verified purchase</th></tr></thead>
+                <tbody>{visibleReviews.map((review) => <tr key={review.review_id}>
+                  <td className="rating">{review.rating == null ? <span title="Rating was not available">—</span> : <>{review.rating.toFixed(1)}<small> / 5</small></>}</td>
+                  <td className="reviewCell"><details className="reviewDetail"><summary><strong>{review.title || "Untitled review"}</strong><span className="reviewPreview">{review.body.slice(0, 180)}{review.body.length > 180 ? "…" : ""}</span><span className="readLink"><ChevronRight size={13} aria-hidden="true" />Full review</span></summary><p className="reviewBody">{review.body}</p>{review.variation && <p className="help">{review.variation}</p>}</details><div className="reviewMeta"><code>{review.review_id}</code><a href={review.source_url} target="_blank" rel="noreferrer">Source<span className="srOnly"> for {review.review_id} (opens in a new tab)</span><ExternalLink size={11} aria-hidden="true" /></a></div></td>
+                  <td className="dateCell">{review.review_date ? <time dateTime={review.review_date} title={review.review_date_raw}>{review.review_date}</time> : review.review_date_raw || "Not available"}</td>
+                  <td><span className={review.verified_purchase ? "verified" : "muted"}>{review.verified_purchase ? "Verified" : "Not stated"}</span></td>
+                </tr>)}</tbody>
+              </table></div> : <div className="noRows"><h3>No matching reviews</h3><p>Try a different search or rating.</p><button className="textButton" onClick={() => { setQuery(""); setRatingFilter("all"); }}>Clear filters</button></div>}
+            </> : <div className="noRows"><Database size={24} aria-hidden="true" /><h3>No records to download</h3><p>{message.text}</p></div>}
+          </section>
+
+          <details className="runDetails"><summary>Run details and data checks</summary>
+            <p className="help">Run ID: <code>{result.run_id}</code></p>
+            <ul className="checkList">{result.checks.map((check, index) => <li key={check.url}><span>Page {index + 1}: {sourceLabel(check.outcome)}</span><a href={check.url} target="_blank" rel="noreferrer">View page<span className="srOnly"> {index + 1} (opens in a new tab)</span></a></li>)}</ul>
+            <p>{result.quality.cards_seen} review cards found · {result.quality.duplicates_removed} duplicate records removed · {result.quality.records_skipped} records skipped because the ID or text was missing or invalid.</p>
+            <button className="textButton" onClick={() => download(`${result.asin}-run.json`, JSON.stringify(result, null, 2) + "\n", "application/json")}>Download run report (JSON)</button>
+          </details>
+        </section>}
+
+        <details className="fieldGuide"><summary>About the data and exports</summary>
+          <div className="guideGrid">
+            <div><h3>Consistent fields</h3><p>CSV and JSON use the same field names: review_id, product_asin, title, body, rating, review_date, review_date_raw, variation, verified_purchase, source_url, and collected_at.</p><p>Dates use YYYY-MM-DD when recognized; the original date text is always retained. Missing values are blank in CSV and null in JSON where applicable. A missing purchase badge is recorded as unknown.</p></div>
+            <div><h3>Coverage and storage</h3><p>Reviews retain their original language. Ratings come from Amazon; they are not sentiment labels. The average uses only rated reviews in this sample.</p><p>This site does not save your runs. Download results before leaving. The repository includes a validated JSON-to-SQLite importer for persistent storage. CSV is spreadsheet-safe; JSON preserves the normalized text exactly.</p></div>
+          </div>
+        </details>
+      </main>
+      <footer><span>Sciencia · Review Collector</span><span>Amazon.com · Available reviews only</span></footer>
+    </>
   );
 }

@@ -12,9 +12,15 @@ The current scope is intentionally narrow:
 
 ## Public web demo
 
-The `site/` directory contains a small public interface for the same feasibility test. A visitor can enter one Amazon ASIN or product URL, run a limited live-source check, inspect any review records exposed to the request, and download the normalized rows as CSV. The web route makes no attempt to log in, solve CAPTCHA, paginate, or bypass an access control. A blocked or unreachable request is displayed as a documented feasibility result rather than treated as collected data.
+The `site/` directory contains the public Review Collector. Enter one Amazon.com ASIN or product URL, collect an available sample, inspect full review text, search/filter the sample, and download CSV or JSON. The parser uses Cloudflare's native HTMLRewriter to read text within each review field. It preserves paragraphs, removes duplicate IDs, keeps unknown ratings and purchase verification as null, and retains raw dates alongside normalized dates. The web route makes at most three page requests. It does not log in, solve CAPTCHA, paginate, or claim to retrieve all historical reviews. Per-request outcomes and data-quality counts are included in the downloadable run report.
 
-The web demo does not persist public visitor queries or review text. Durable structured storage remains in the Python prototype's SQLite output so anonymous visitors cannot use the deployment as a public data-writing service.
+The website does not persist visitor queries or review text. Download the JSON records and load them into a local relational SQLite database with the importer below. This closes the export-to-storage path without claiming that the public website saves runs in the cloud.
+
+```powershell
+python -m review_ingestion.import_web --input B09XS7JWHH-reviews.json --db data/web-reviews.sqlite3
+```
+
+The importer validates every row before loading, uses products/reviews/ingestion_runs tables, enforces foreign keys and rating constraints, preserves nulls, and upserts on `(product_asin, review_id)`. Re-importing the same file does not duplicate review rows. Older exports cannot overwrite newer observations. Use a new database for web exports; the legacy CLI database is not silently migrated. See [data contract](docs/data-contract.md) and [quality review](docs/quality-review.md).
 
 Run the website locally with:
 
@@ -65,3 +71,13 @@ python -m unittest discover -s tests -v
 ```
 
 The tests use local fixtures and do not contact Amazon.
+
+Web parser and collection regression tests run in the same Worker runtime as production, using the already installed Miniflare dependency of Wrangler. No new packages are required:
+
+```powershell
+cd site
+npm test
+npm run typecheck
+npm run lint
+npm run build
+```
