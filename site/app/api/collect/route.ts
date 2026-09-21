@@ -13,12 +13,24 @@ function extractAsin(value: string) {
 }
 
 function decodeHtml(value: string) {
-  return value.replace(/<br\s*\/?\s*>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+  return value.replace(/<br\s*\/?\s*>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&#x27;|&apos;/gi, "'").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function capture(block: string, hook: string) {
   const pattern = new RegExp(`data-hook=["']${hook}["'][^>]*>([\\s\\S]*?)<\\/[^>]+>`, "i");
   return decodeHtml(block.match(pattern)?.[1] ?? "");
+}
+
+function captureReviewBody(block: string) {
+  const start = block.search(/data-hook=["'](?:review-body|reviewText)["']/i);
+  if (start < 0) return "";
+  const segment = block.slice(start, start + 16000);
+  const candidates = [...segment.matchAll(/<span[^>]*>([\s\S]*?)<\/span>/gi)]
+    .map((match) => decodeHtml(match[1]))
+    .map((text) => text.replace(/Brief content visible, double tap to read full content\.|Full content visible, double tap to read brief content\.|Read more|Read less/gi, "").trim())
+    .filter((text) => text.length > 5)
+    .sort((a, b) => b.length - a.length);
+  return candidates[0] ?? "";
 }
 
 function parseReviews(html: string, asin: string, sourceUrl: string) {
@@ -29,7 +41,7 @@ function parseReviews(html: string, asin: string, sourceUrl: string) {
     const end = starts[index + 1]?.index ?? Math.min(html.length, start + 80000);
     const block = html.slice(start, end);
     const id = block.match(/\bid=["']([^"']+)["']/i)?.[1] ?? `${asin}-${index + 1}`;
-    const body = capture(block, "review-body") || capture(block, "reviewText");
+    const body = captureReviewBody(block);
     if (!body) continue;
     const ratingText = capture(block, "review-star-rating") || capture(block, "cmps-review-star-rating");
     const parsedRating = Number(ratingText.match(/([0-5](?:\.\d)?)/)?.[1] ?? "");
