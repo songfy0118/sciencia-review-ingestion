@@ -1,4 +1,4 @@
-# Sciencia Product Review Data
+# Product Review Data
 
 This repository is a small feasibility test for a repeatable review-ingestion workflow. It accepts a defined set of Amazon product identifiers or URLs, makes a limited request, detects common access barriers, extracts review fields when they are present, and stores the result in SQLite.
 

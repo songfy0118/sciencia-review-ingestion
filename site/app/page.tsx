@@ -92,7 +92,7 @@ export default function Home() {
     <>
       <a className="skipLink" href="#workspace">Skip to collection</a>
       <header className="topbar">
-        <Link className="brand" href="/" aria-label="Sciencia Product Review Data home"><Database size={21} aria-hidden="true" /><strong>Sciencia</strong><span>Product Review Data</span></Link>
+        <Link className="brand" href="/" aria-label="Product Review Data home"><Database size={21} aria-hidden="true" /><strong>Product Review Data</strong><span>Review collection preview</span></Link>
         <span className="tag">Research preview</span>
       </header>
       <main id="workspace" className="workspace">
@@ -189,7 +189,7 @@ export default function Home() {
           </div>
         </details>
       </main>
-      <footer><span>Sciencia · Product Review Data</span><span>Amazon.com · Available reviews only</span></footer>
+      <footer><span>Product Review Data</span><span>Amazon.com · Available reviews only</span></footer>
     </>
   );
 }
