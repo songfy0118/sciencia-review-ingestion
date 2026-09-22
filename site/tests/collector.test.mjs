@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import { Miniflare } from "miniflare";
 import ts from "typescript";
 
-const compiled = ["review-data", "amazon-parser", "collector"].map((name) => {
+const compiled = ["review-data", "xlsx", "amazon-parser", "collector"].map((name) => {
   const source = readFileSync(new URL(`../lib/${name}.ts`, import.meta.url), "utf8");
   return ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText.replace(/^import .*?;\s*$/gm, "");
 }).join("\n");
@@ -17,6 +17,8 @@ export default { async fetch(request) {
     if (data.op === 'input') return Response.json({ asin: extractAsin(data.input) });
     if (data.op === 'date') return Response.json({ date: normalizeDate(data.raw) });
     if (data.op === 'csv') return new Response(toCsv(data.reviews));
+    if (data.op === 'sql') return new Response(toSqliteSql(data.result));
+    if (data.op === 'xlsx') return new Response(toXlsx(data.result));
     if (data.op === 'collect') {
       let index = 0;
       const mockFetch = async () => {
@@ -126,13 +128,38 @@ test("CSV preserves quotes and line breaks and neutralizes spreadsheet formulas"
   writeFileSync(resolve(output,"fixture-export.csv"),csv);
 });
 
+test("review JSON, Excel, SQL, and technical logs remain distinct exports", async () => {
+  const result=await call({op:"collect",input:"B09XS7JWHH",responses:[{html:card("REXPORT","It's a complete review.")} ]});
+  const sqlResponse=await worker.dispatchFetch("https://test.invalid",{method:"POST",body:JSON.stringify({op:"sql",result})});
+  const sql=await sqlResponse.text();
+  assert.ok(sql.includes("CREATE TABLE IF NOT EXISTS reviews"));
+  assert.ok(sql.includes("It''s a complete review."));
+  assert.ok(sql.includes("PRIMARY KEY (product_asin, review_id)"));
+
+  const xlsxResponse=await worker.dispatchFetch("https://test.invalid",{method:"POST",body:JSON.stringify({op:"xlsx",result})});
+  const bytes=Buffer.from(await xlsxResponse.arrayBuffer());
+  assert.equal(bytes.subarray(0,2).toString(),"PK");
+  assert.ok(bytes.includes(Buffer.from("Reviews")));
+  assert.ok(bytes.includes(Buffer.from("Run summary")));
+  assert.ok(bytes.includes(Buffer.from("complete review")));
+
+  const output=resolve(".sites-runtime/audit"); mkdirSync(output,{recursive:true});
+  writeFileSync(resolve(output,"fixture-review-workbook.xlsx"),bytes);
+  writeFileSync(resolve(output,"fixture-sqlite-import.sql"),sql);
+});
+
 test("live HTML audit: all paragraphs stay within the review text", {skip:!existsSync(resolve(".sites-runtime/audit/source.html"))}, async () => {
   const html=readFileSync(resolve(".sites-runtime/audit/source.html"),"utf8");
-  const result=await call({html});
-  assert.ok(result.reviews.length>0);
-  assert.ok(result.reviews.every((row)=>row.body!=="Sending feedback..."));
-  const first=result.reviews.find((row)=>row.review_id==="R296H0MM1B5KU8");
+  const parsed=await call({html});
+  assert.ok(parsed.reviews.length>0);
+  assert.ok(parsed.reviews.every((row)=>row.body!=="Sending feedback..."));
+  const first=parsed.reviews.find((row)=>row.review_id==="R296H0MM1B5KU8");
   if(first) { assert.ok(first.body.includes("Greetings")); assert.ok(first.body.includes("Weight")); assert.ok(first.body.includes("Bluetooth")); }
+  const result=await call({op:"collect",input:"B09XS7JWHH",responses:[{html}]});
   writeFileSync(resolve(".sites-runtime/audit/live-export.json"),JSON.stringify(result.reviews,null,2));
+  const workbook=await worker.dispatchFetch("https://test.invalid",{method:"POST",body:JSON.stringify({op:"xlsx",result})});
+  writeFileSync(resolve(".sites-runtime/audit/live-review-workbook.xlsx"),Buffer.from(await workbook.arrayBuffer()));
+  const sql=await worker.dispatchFetch("https://test.invalid",{method:"POST",body:JSON.stringify({op:"sql",result})});
+  writeFileSync(resolve(".sites-runtime/audit/live-sqlite-import.sql"),await sql.text());
   console.log("Live source audit:", result.reviews.length, "records; first body", result.reviews[0].body.length, "characters;", result.quality);
 });

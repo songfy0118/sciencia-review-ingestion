@@ -3,13 +3,13 @@
 import { FormEvent, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowDownToLine, Check, ChevronRight, CircleAlert, Database, ExternalLink, Loader2, Search } from "lucide-react";
-import { extractAsin, resultMessage, sourceLabel, toCsv, type CollectResult } from "../lib/review-data";
+import { extractAsin, resultMessage, sourceLabel, toSqliteSql, type CollectResult } from "../lib/review-data";
+import { toXlsx } from "../lib/xlsx";
 
 const EXAMPLE = "B09XS7JWHH";
-type ExportFormat = "csv" | "json";
 
-function download(filename: string, text: string, type: string) {
-  const url = URL.createObjectURL(new Blob([text], { type }));
+function download(filename: string, data: BlobPart, type: string) {
+  const url = URL.createObjectURL(new Blob([data], { type }));
   const link = document.createElement("a");
   link.href = url;
   link.download = filename;
@@ -27,7 +27,6 @@ export default function Home() {
   const [inputError, setInputError] = useState("");
   const [query, setQuery] = useState("");
   const [ratingFilter, setRatingFilter] = useState("all");
-  const [format, setFormat] = useState<ExportFormat>("csv");
   const [downloadNote, setDownloadNote] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLHeadingElement>(null);
@@ -71,11 +70,22 @@ export default function Home() {
     } finally { clearTimeout(timer); setLoading(false); }
   }
 
-  function exportReviews() {
+  function exportExcel() {
     if (!result?.reviews.length) return;
-    const text = format === "csv" ? toCsv(result.reviews) : JSON.stringify(result.reviews, null, 2) + "\n";
-    download(`${result.asin}-reviews.${format}`, text, format === "csv" ? "text/csv;charset=utf-8" : "application/json");
-    setDownloadNote(`${format.toUpperCase()} download started. All ${result.reviews.length} records are included.`);
+    download(`${result.asin}-review-workbook.xlsx`, toXlsx(result), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    setDownloadNote(`Excel download started. The Reviews and Run summary sheets include all ${result.reviews.length} records.`);
+  }
+
+  function exportJson() {
+    if (!result?.reviews.length) return;
+    download(`${result.asin}-reviews.json`, JSON.stringify(result.reviews, null, 2) + "\n", "application/json");
+    setDownloadNote(`Review JSON download started. All ${result.reviews.length} records are included.`);
+  }
+
+  function exportSql() {
+    if (!result?.reviews.length) return;
+    download(`${result.asin}-sqlite-import.sql`, toSqliteSql(result), "application/sql;charset=utf-8");
+    setDownloadNote(`SQLite import download started. It creates the products, reviews, and ingestion_runs tables.`);
   }
 
   return (
@@ -135,9 +145,14 @@ export default function Home() {
 
           <section className="panel recordsPanel" aria-labelledby="records-heading">
             <div className="tableHeader">
-              <div><h3 id="records-heading">Review records <span className="count">{result.reviews.length}</span></h3><p>Download all collected records as CSV or JSON.</p></div>
-              <div className="exportControls"><label className="srOnly" htmlFor="format">Export format</label><select id="format" value={format} onChange={(event) => setFormat(event.target.value as ExportFormat)}><option value="csv">CSV</option><option value="json">JSON</option></select><button className="secondary" onClick={exportReviews} disabled={!result.reviews.length}><ArrowDownToLine size={16} aria-hidden="true" />Download</button></div>
+              <div><h3 id="records-heading">Review records <span className="count">{result.reviews.length}</span></h3><p>Choose the file that matches how you will use the data.</p></div>
+              <div className="exportControls" aria-label="Download collected review data">
+                <button className="secondary" onClick={exportExcel} disabled={!result.reviews.length}><ArrowDownToLine size={16} aria-hidden="true" />Excel workbook</button>
+                <button className="secondary" onClick={exportJson} disabled={!result.reviews.length}><ArrowDownToLine size={16} aria-hidden="true" />Review JSON</button>
+                <button className="secondary" onClick={exportSql} disabled={!result.reviews.length}><ArrowDownToLine size={16} aria-hidden="true" />SQLite import</button>
+              </div>
             </div>
+            <div className="exportGuide"><span><strong>Excel</strong> formatted for review</span><span><strong>JSON</strong> normalized review records</span><span><strong>SQL</strong> creates and fills a SQLite database</span></div>
             <p className="srOnly" role="status">{downloadNote}</p>
             {result.reviews.length > 0 ? <>
               <div className="tableTools">
@@ -162,14 +177,15 @@ export default function Home() {
             <p className="help">Run ID: <code>{result.run_id}</code></p>
             <ul className="checkList">{result.checks.map((check, index) => <li key={check.url}><span>Page {index + 1}: {sourceLabel(check.outcome)}</span><a href={check.url} target="_blank" rel="noreferrer">View page<span className="srOnly"> {index + 1} (opens in a new tab)</span></a></li>)}</ul>
             <p>{result.quality.cards_seen} review cards found · {result.quality.duplicates_removed} duplicate records removed · {result.quality.records_skipped} records skipped because the ID or text was missing or invalid.</p>
-            <button className="textButton" onClick={() => download(`${result.asin}-run.json`, JSON.stringify(result, null, 2) + "\n", "application/json")}>Download run report (JSON)</button>
+            <p className="help"><strong>Technical log:</strong> this file records page checks and quality counts. It is not the review-data file and is not used for database import.</p>
+            <button className="textButton" onClick={() => download(`${result.asin}-technical-run-log.json`, JSON.stringify(result, null, 2) + "\n", "application/json")}>Download technical run log</button>
           </details>
         </section>}
 
         <details className="fieldGuide"><summary>About the data and exports</summary>
           <div className="guideGrid">
-            <div><h3>Consistent fields</h3><p>CSV and JSON use the same field names: review_id, product_asin, title, body, rating, review_date, review_date_raw, variation, verified_purchase, source_url, and collected_at.</p><p>Dates use YYYY-MM-DD when recognized; the original date text is always retained. Missing values are blank in CSV and null in JSON where applicable. A missing purchase badge is recorded as unknown.</p></div>
-            <div><h3>Coverage and storage</h3><p>Reviews retain their original language. Ratings come from Amazon; they are not sentiment labels. The average uses only rated reviews in this sample.</p><p>This site does not save your runs. Download results before leaving. The repository includes a validated JSON-to-SQLite importer for persistent storage. CSV is spreadsheet-safe; JSON preserves the normalized text exactly.</p></div>
+            <div><h3>Files for people and programs</h3><p>The Excel workbook follows the supplied research-table style: clear headers, fixed widths, wrapped text, filters, a frozen header row, and a separate run-summary sheet.</p><p>The Review JSON contains only normalized review records. The technical run log is separate so it cannot be confused with data intended for import.</p></div>
+            <div><h3>SQLite storage</h3><p>The SQLite import is a readable SQL script. Import it into SQLite to create three related tables: products, reviews, and ingestion_runs. Review IDs and ASINs prevent duplicate rows.</p><p>This site does not retain visitor data. Download a file before leaving. Coverage remains an available sample until pagination and source-total checks are implemented.</p></div>
           </div>
         </details>
       </main>

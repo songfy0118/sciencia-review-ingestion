@@ -73,6 +73,54 @@ export function toCsv(reviews: Review[]) {
     .map((row) => row.map(cell).join(",")).join("\r\n") + "\r\n";
 }
 
+function sqlValue(value: unknown) {
+  if (value == null) return "NULL";
+  if (typeof value === "number") return Number.isFinite(value) ? String(value) : "NULL";
+  if (typeof value === "boolean") return value ? "1" : "0";
+  return `'${String(value).replaceAll("'", "''")}'`;
+}
+
+// Produces a portable SQL script that creates and fills the same relational
+// schema as the validated JSON importer. The script can be opened and audited.
+export function toSqliteSql(result: CollectResult) {
+  const schema = `PRAGMA foreign_keys = ON;
+BEGIN TRANSACTION;
+CREATE TABLE IF NOT EXISTS products (
+  asin TEXT PRIMARY KEY,
+  source_url TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS reviews (
+  review_id TEXT NOT NULL,
+  product_asin TEXT NOT NULL REFERENCES products(asin),
+  title TEXT NOT NULL,
+  body TEXT NOT NULL CHECK(length(trim(body)) > 0),
+  rating REAL CHECK(rating IS NULL OR rating BETWEEN 1 AND 5),
+  review_date TEXT,
+  review_date_raw TEXT NOT NULL,
+  variation TEXT NOT NULL,
+  verified_purchase INTEGER CHECK(verified_purchase IS NULL OR verified_purchase IN (0, 1)),
+  source_url TEXT NOT NULL,
+  collected_at TEXT NOT NULL,
+  PRIMARY KEY (product_asin, review_id)
+);
+CREATE INDEX IF NOT EXISTS reviews_product_date ON reviews(product_asin, review_date);
+CREATE TABLE IF NOT EXISTS ingestion_runs (
+  run_id TEXT PRIMARY KEY,
+  imported_at TEXT NOT NULL,
+  record_count INTEGER NOT NULL,
+  source_file TEXT NOT NULL
+);`;
+  const product = `INSERT INTO products (asin, source_url) VALUES (${sqlValue(result.asin)}, ${sqlValue(`https://www.amazon.com/dp/${result.asin}`)}) ON CONFLICT(asin) DO NOTHING;`;
+  const reviews = result.reviews.map((review) => {
+    const values = REVIEW_FIELDS.map((field) => sqlValue(review[field])).join(", ");
+    const updates = REVIEW_FIELDS.filter((field) => !["review_id", "product_asin"].includes(field))
+      .map((field) => `${field}=excluded.${field}`).join(", ");
+    return `INSERT INTO reviews (${REVIEW_FIELDS.join(", ")}) VALUES (${values}) ON CONFLICT(product_asin, review_id) DO UPDATE SET ${updates} WHERE julianday(excluded.collected_at) >= julianday(reviews.collected_at);`;
+  }).join("\n");
+  const run = `INSERT INTO ingestion_runs (run_id, imported_at, record_count, source_file) VALUES (${sqlValue(result.run_id)}, ${sqlValue(result.collected_at)}, ${result.reviews.length}, ${sqlValue(`${result.asin}-reviews.json`)}) ON CONFLICT(run_id) DO NOTHING;`;
+  return ["-- Sciencia Review Collector SQLite import", `-- Coverage: ${result.coverage}; completeness is not verified.`, schema, product, reviews, run, "COMMIT;", ""].join("\n");
+}
+
 export function sourceLabel(outcome: string) {
   const labels: Record<string, string> = {
     reviews_present: "Reviews available", no_reviews: "No reviews on this page",

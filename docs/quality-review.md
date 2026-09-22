@@ -24,11 +24,13 @@ Automated Worker-runtime tests cover multi-paragraph/short reviews, nested marku
 
 ## Executed checks (2026-09-21)
 
-- 12 Worker-runtime tests passed, including one against a freshly retrieved Amazon product page; 6 Python tests passed.
+- 13 Worker-runtime tests passed, including one against a saved live Amazon product page; 6 Python tests passed.
 - TypeScript checking, ESLint, and production build passed.
-- Browser exercise: empty-input validation, example input, live collection, rating filter, no-match search, filter reset, and CSV/JSON downloads.
+- Browser exercise: empty-input validation, example input, live collection, rating filter, no-match search, filter reset, and distinct Excel/JSON/SQLite-import controls. Generated files were validated separately as described below.
 - The actual downloaded files each contained 13 records with identical columns and body text. The first full review contained 2,332 characters, including the opening and all available paragraphs; the short review previously replaced by feedback UI text was correctly read as the source's short comment.
 - Actual downloaded JSON was loaded into SQLite twice: 13 stored review rows after each run, integrity_check = ok, zero foreign-key errors.
+- The formatted 13-row Excel workbook was reopened and rendered from the saved `.xlsx`; both `Reviews` and `Run summary` were readable and retained multilingual text.
+- The generated SQLite import script was executed against a new database: 1 product, 13 reviews, and 1 ingestion run; `integrity_check = ok` and the foreign-key check returned no errors.
 - Desktop and 390 px mobile layouts were inspected. The page did not overflow horizontally; the wide review table scrolls inside its own region.
 
 ## Remaining limits

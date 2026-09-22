@@ -6,15 +6,15 @@ The current scope is intentionally narrow:
 
 - input: a small list of product ASINs or URLs;
 - collected fields: review ID, text, rating, date, product identifier, variation, verification flag, source URL, and collection time;
-- intermediate output: CSV and a JSON run report;
+- downloadable output: a formatted Excel workbook, review-only JSON, a SQLite import script, and a separate technical run log;
 - final local storage: SQLite;
 - excluded for now: category-wide discovery, product comparison, sentiment analysis, and model training.
 
 ## Public web demo
 
-The `site/` directory contains the public Review Collector. Enter one Amazon.com ASIN or product URL, collect an available sample, inspect full review text, search/filter the sample, and download CSV or JSON. The parser uses Cloudflare's native HTMLRewriter to read text within each review field. It preserves paragraphs, removes duplicate IDs, keeps unknown ratings and purchase verification as null, and retains raw dates alongside normalized dates. The web route makes at most three page requests. It does not log in, solve CAPTCHA, paginate, or claim to retrieve all historical reviews. Per-request outcomes and data-quality counts are included in the downloadable run report.
+The `site/` directory contains the public Review Collector. Enter one Amazon.com ASIN or product URL, collect an available sample, inspect full review text, search/filter the sample, and download a formatted Excel workbook, review-only JSON, or a SQLite import script. The Excel workbook follows the supplied research-table reference with wrapped text, usable column widths, filters, a frozen header row, and a separate run-summary sheet. The parser uses Cloudflare's native HTMLRewriter to read text within each review field. It preserves paragraphs, removes duplicate IDs, keeps unknown ratings and purchase verification as null, and retains raw dates alongside normalized dates. The web route makes at most three page requests. It does not log in, solve CAPTCHA, paginate, or claim to retrieve all historical reviews. Per-request outcomes and data-quality counts are included in a separate technical run log.
 
-The website does not persist visitor queries or review text. Download the JSON records and load them into a local relational SQLite database with the importer below. This closes the export-to-storage path without claiming that the public website saves runs in the cloud.
+The website does not persist visitor queries or review text. There are two SQLite paths. Download the SQL import and run it in SQLite or DB Browser for SQLite, or download the review-only JSON and use the validated Python importer below. Both paths create `products`, `reviews`, and `ingestion_runs`; the JSON importer performs stricter row-by-row validation before writing.
 
 ```powershell
 python -m review_ingestion.import_web --input B09XS7JWHH-reviews.json --db data/web-reviews.sqlite3

@@ -1,6 +1,6 @@
 # Review export contract (version 1.0)
 
-CSV and JSON use the same field names and column order. JSON is an array of records. The run report is a separate object containing the records, source checks, coverage, run ID, collection timestamp, and quality counts.
+The review-only JSON is an array of normalized records. The formatted Excel workbook presents the same review fields on a `Reviews` sheet and puts run metadata and page checks on a separate `Run summary` sheet. The SQLite import is a readable SQL script that creates and fills `products`, `reviews`, and `ingestion_runs`. The technical run log is a separate object containing the records, source checks, coverage, run ID, collection timestamp, and quality counts.
 
 | Field | JSON type | Meaning |
 | --- | --- | --- |
@@ -27,7 +27,7 @@ CSV and JSON use the same field names and column order. JSON is an array of reco
 
 ## Export and storage
 
-CSV uses UTF-8 with a BOM, quoted fields, escaped double quotes, CRLF record endings, and empty cells for null values. Potential spreadsheet formulas beginning with =, +, -, or @ (including leading whitespace) receive a leading apostrophe. JSON preserves the normalized text without that spreadsheet protection; use JSON for ingestion.
+The Excel workbook uses wrapped text, fixed widths, filtering, frozen headers, typed ratings, and a separate run summary. JSON preserves normalized text exactly and remains the recommended input for the strict Python importer. The SQL script escapes text values and uses the same relational keys and constraints as the SQLite importer.
 
 `python -m review_ingestion.import_web --input <export.json> --db data/web-reviews.sqlite3` validates all rows, loads products and reviews in a transaction, records each import, and checks SQLite integrity and foreign keys. Re-import is idempotent for review rows, while import history records each operation. The earlier feasibility CLI uses its original schema; incompatible existing databases are rejected rather than modified.
 
