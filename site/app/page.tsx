@@ -92,13 +92,13 @@ export default function Home() {
     <>
       <a className="skipLink" href="#workspace">Skip to collection</a>
       <header className="topbar">
-        <Link className="brand" href="/" aria-label="Sciencia Review Collector home"><Database size={21} aria-hidden="true" /><strong>Sciencia</strong><span>Review Collector</span></Link>
+        <Link className="brand" href="/" aria-label="Sciencia Product Review Data home"><Database size={21} aria-hidden="true" /><strong>Sciencia</strong><span>Product Review Data</span></Link>
         <span className="tag">Research preview</span>
       </header>
       <main id="workspace" className="workspace">
         <div className="pageHeading">
           <p className="eyebrow">PRODUCT DATA / AMAZON US</p>
-          <h1>Review collector</h1>
+          <h1>Amazon review data</h1>
           <p>Collect available reviews for one product. Inspect the records, then download your data.</p>
         </div>
 
@@ -189,7 +189,7 @@ export default function Home() {
           </div>
         </details>
       </main>
-      <footer><span>Sciencia · Review Collector</span><span>Amazon.com · Available reviews only</span></footer>
+      <footer><span>Sciencia · Product Review Data</span><span>Amazon.com · Available reviews only</span></footer>
     </>
   );
 }
