@@ -1,0 +1,75 @@
+{
+  "generated_at": "2026-09-25T21:18:27.696264Z",
+  "integrity": "ok",
+  "foreign_key_issues": 0,
+  "committed_pages": 24,
+  "source_records_seen": 1200,
+  "unique_reviews": 601,
+  "snapshot_backed_unique_reviews": 601,
+  "snapshot_mismatches": 0,
+  "count_issues": [],
+  "apps": [
+    {
+      "app_id": "com.duolingo",
+      "unique_reviews": 200,
+      "oldest_review": "2026-08-29T09:44:31Z",
+      "newest_review": "2026-09-10T20:31:09Z",
+      "newest_review_age_days": 15.03,
+      "freshness_warning": "Newest returned review is over seven days old; investigate source freshness",
+      "comparable_run_ids": [
+        "ce328676-f542-4406-a519-a6dfacbcbba3",
+        "d337d5b6-c712-4dd3-bb95-970ebc85d68e"
+      ],
+      "comparison_parameters": {
+        "pages": 2,
+        "lang": "en",
+        "country": "us",
+        "count": 50,
+        "sort": "NEWEST"
+      },
+      "review_id_jaccard": 1.0
+    },
+    {
+      "app_id": "com.google.android.apps.maps",
+      "unique_reviews": 200,
+      "oldest_review": "2026-09-24T14:40:28Z",
+      "newest_review": "2026-09-24T21:10:14Z",
+      "newest_review_age_days": 1.01,
+      "freshness_warning": null,
+      "comparable_run_ids": [
+        "ce328676-f542-4406-a519-a6dfacbcbba3",
+        "d337d5b6-c712-4dd3-bb95-970ebc85d68e"
+      ],
+      "comparison_parameters": {
+        "pages": 2,
+        "lang": "en",
+        "country": "us",
+        "count": 50,
+        "sort": "NEWEST"
+      },
+      "review_id_jaccard": 1.0
+    },
+    {
+      "app_id": "com.spotify.music",
+      "unique_reviews": 201,
+      "oldest_review": "2026-09-24T15:24:43Z",
+      "newest_review": "2026-09-24T21:13:13Z",
+      "newest_review_age_days": 1.0,
+      "freshness_warning": null,
+      "comparable_run_ids": [
+        "ce328676-f542-4406-a519-a6dfacbcbba3",
+        "d337d5b6-c712-4dd3-bb95-970ebc85d68e"
+      ],
+      "comparison_parameters": {
+        "pages": 2,
+        "lang": "en",
+        "country": "us",
+        "count": 50,
+        "sort": "NEWEST"
+      },
+      "review_id_jaccard": 1.0
+    }
+  ],
+  "storage_checks_passed": true,
+  "coverage": "Bounded sample; storage checks cannot establish source completeness or freshness"
+}

@@ -1,0 +1,83 @@
+{
+  "schema_version": 2,
+  "runs": [
+    {
+      "run_id": "efb6d2bd-c545-461d-ad8b-739e258f941e",
+      "source": "google_play",
+      "config": {
+        "apps": [
+          {
+            "app_id": "com.spotify.music",
+            "label": "Spotify"
+          },
+          {
+            "app_id": "com.duolingo",
+            "label": "Duolingo"
+          },
+          {
+            "app_id": "com.google.android.apps.maps",
+            "label": "Google Maps"
+          }
+        ],
+        "lang": "en",
+        "country": "us",
+        "count": 50,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7"
+      },
+      "generated_at": "2026-09-25T21:12:58.347747Z",
+      "status": "bounded_success",
+      "coverage": "bounded_sample_not_complete_history",
+      "apps": [
+        {
+          "app_id": "com.duolingo",
+          "label": "Duolingo",
+          "status": "paused",
+          "pages": 4,
+          "can_resume": true,
+          "error": null,
+          "raw_records": 200,
+          "accepted_records": 200,
+          "duplicates": 0,
+          "rejected_records": 0,
+          "new_records": 200,
+          "repeated_records": 0
+        },
+        {
+          "app_id": "com.google.android.apps.maps",
+          "label": "Google Maps",
+          "status": "paused",
+          "pages": 4,
+          "can_resume": true,
+          "error": null,
+          "raw_records": 200,
+          "accepted_records": 200,
+          "duplicates": 0,
+          "rejected_records": 0,
+          "new_records": 200,
+          "repeated_records": 0
+        },
+        {
+          "app_id": "com.spotify.music",
+          "label": "Spotify",
+          "status": "paused",
+          "pages": 4,
+          "can_resume": true,
+          "error": null,
+          "raw_records": 200,
+          "accepted_records": 200,
+          "duplicates": 0,
+          "rejected_records": 0,
+          "new_records": 200,
+          "repeated_records": 0
+        }
+      ],
+      "database_integrity_check": "ok",
+      "foreign_key_issues": 0,
+      "unique_reviews_in_database": 600,
+      "observations_in_run": 600,
+      "failed_attempts": 0
+    }
+  ]
+}

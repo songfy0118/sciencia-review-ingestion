@@ -1,5 +1,7 @@
 # Google Play Repeatability Findings
 
+> Historical v1 test. The [v2 review](google-play-v2-findings.md) supersedes the continuation-token and timezone assumptions below and adds real pagination, restart/resume tests, and a freshness limitation. The old JSON report is retained unchanged as the original experiment record.
+
 **Test date:** September 25, 2026
 
 ## Question

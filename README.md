@@ -1,72 +1,90 @@
 # Review Ingestion Pipeline
 
-This repository evaluates live review sources and stores normalized review data in one centralized SQLite database. Google Play is now the primary prototype source. The earlier Amazon collector remains in the repository as a completed feasibility study because its access results were not stable enough for a repeatable pipeline.
+Collect a defined list of Google Play apps, save review records into one persistent SQLite database, and resume from the last committed page. This is a bounded research prototype. Amazon work is paused; its code and findings remain as the earlier source-feasibility experiment.
 
-## Current result
+**For a quick review:** start with [the current findings](docs/google-play-v2-findings.md), then [the source and storage audit](samples/google_play_v2_audit.json).
 
-The first Google Play repeatability test collected the 50 newest US-English reviews for Spotify, Duolingo, and Google Maps in three consecutive runs.
+## What was tested
 
-- 9 of 9 app collections completed successfully.
-- Every app returned 50 valid records in every run.
-- Runs two and three repeated the same bounded review window, giving 100% overlap with the previous run.
-- The centralized database contained 150 unique reviews and 450 per-run observations.
+On September 25, 2026, the collector fetched two pages each for Spotify, Duolingo and Google Maps, exited, and resumed in a new process for two more pages. Two later runs collected the first two pages again, separated by a 30-second interval.
+
+- 24 page requests completed in the network-enabled test: 1,200 record observations, 601 unique reviews.
+- All 601 stored reviews matched their latest saved source-record snapshots after normalization.
 - SQLite integrity and foreign-key checks passed.
-- A continuation token was available in every collection, so later work can add controlled pagination and resume support.
+- Resume added later pages; repeating the recent window updated existing records without duplicating them.
+- Duolingo's newest returned review was approximately 15 days old despite requesting `NEWEST`. This needs further investigation; successful collection does not establish source freshness or complete coverage.
 
-See [Google Play findings](docs/google-play-findings.md) and the machine-readable [repeatability report](samples/google_play_repeatability.json).
+The database is local and persistent on the machine running the collector. It is shared by all runs using the same database path. No always-on cloud collection service is configured.
 
-## Run the Google Play test
+## Collect reviews
 
-Python 3.11 or newer is recommended.
+Use Python 3.11 or newer. Windows PowerShell:
 
 ```powershell
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 .venv\Scripts\python.exe -m review_ingestion.google_play_cli `
-  --input config\google_play_apps.example.json `
-  --db data\google_play_reviews.sqlite3 `
-  --report data\google_play_repeatability.json `
-  --runs 3 `
-  --count 50 `
-  --delay 2
+  --input config/google_play_apps.example.json `
+  --db data/google_play_v2.sqlite3 `
+  --report data/latest-run.json `
+  --pages 2 --count 50 --delay 2
 ```
 
-The input file contains Google Play app IDs such as `com.spotify.music`. One command collects several apps repeatedly and writes all results into the same database. Repeated reviews update the existing record instead of creating duplicates.
+On macOS/Linux, use `.venv/bin/python` and shell-appropriate line continuation. Input uses app IDs such as `com.spotify.music`. `--count` is the requested records per page; `--pages` limits additional pages per app in this invocation. Actual returned counts are recorded. Requests use the configured locale and `NEWEST` sort; locale parameters do not guarantee every review is written in that language.
 
-## Centralized database
+For repeated collection, append `--runs 3 --interval 60`. Each run starts with recent reviews and writes into the same database. Run and page budgets keep this research test bounded.
 
-The SQLite database is the primary output. It contains:
+## Resume after stopping
 
-- `apps`: one row per Google Play app;
-- `reviews`: one normalized row per unique app and review ID;
-- `collection_runs`: one row per complete pipeline run;
-- `collection_run_apps`: the status and counts for every app in each run;
-- `review_observations`: a trace showing which reviews appeared in each run.
+The command prints its run ID as soon as the run is saved. Reuse the same input, database, locale and page size, adding `--resume RUN_ID`:
 
-Review fields include the source review ID, app ID, author name, review text, rating, helpful-vote count, app version, review timestamp, developer response, source URL, and first/last collection times.
+```powershell
+.venv\Scripts\python.exe -m review_ingestion.google_play_cli `
+  --input config/google_play_apps.example.json `
+  --db data/google_play_v2.sqlite3 `
+  --report data/resumed-run.json `
+  --resume YOUR_RUN_ID --pages 2 --count 50
+```
 
-## Main files
+Every committed page saves its reviews, source-record snapshot, observations and next cursor in one transaction. A failed or interrupted request keeps the previous checkpoint. A failed database transaction rolls back the whole page. Another process cannot collect into the same database simultaneously.
 
-- `review_ingestion/google_play.py`: collects and normalizes Google Play app and review data.
-- `review_ingestion/google_play_storage.py`: creates and updates the centralized SQLite database.
-- `review_ingestion/google_play_cli.py`: runs repeated collection across several apps and creates the report.
-- `config/google_play_apps.example.json`: example app list.
-- `samples/google_play_repeatability.json`: results from the first live repeated-collection test.
-- `tests/test_google_play.py`: validation, normalization, deduplication, and database tests.
+Saved cursors may expire or become invalid upstream. A failed resume is reported; it does not silently restart at page one. Start a new run to refresh recent reviews when needed. Source exhaustion, repeated cursors and rejected records stop further requests for that app.
 
-## Current limitations
+## Inspect and export
 
-- The collector uses the unofficial `google-play-scraper` package rather than an official review API.
-- Results depend on language, country, sort order, and the selected review window.
-- The current test intentionally requests only 50 reviews per app and does not claim complete historical coverage.
-- The collector detects that more pages are available, but durable continuation-token checkpoints and automatic resume are the next implementation step.
-- Live page or response changes can still require maintenance, so scheduled repeatability checks are needed.
+```powershell
+.venv\Scripts\python.exe -m review_ingestion.audit_play --db data/google_play_v2.sqlite3 --report data/audit.json
+.venv\Scripts\python.exe -m review_ingestion.inspect_play --db data/google_play_v2.sqlite3 --output data/inspection
+```
 
-## Amazon feasibility study
+Open `data/inspection/index.html` in a browser. It shows counts and up to 100 readable review rows, with links to:
 
-Amazon-specific development is paused. The experiment showed that the same ASIN could expose reviews in one request and return sign-in or verification in another. Pagination could also stop unpredictably. These results are documented in [FINDINGS.md](FINDINGS.md), and the earlier [public web demo](https://product-review-data.review-data-lab.workers.dev/) remains available as historical prototype evidence.
+- `reviews.json`: actual normalized review records, including text, rating, timestamps and app IDs;
+- `reviews.sqlite3`: a consistent copy of the actual database, ready to open in a SQLite viewer. This is a database file, not a SQL import script.
 
-The Amazon adapter, sample results, and website are retained so the source decision remains reviewable. They are not the recommended foundation for the next ingestion stage.
+The exported database also contains page snapshots, attempts and checkpoints. These files stay local and are ignored by Git; published sample reports contain counts and findings, not review text or usernames.
+
+## How the code is organized
+
+| File | Purpose |
+| --- | --- |
+| `google_play_cli.py` | App list, run limits, repeated runs and resume command |
+| `play_pipeline.py` | Per-page transactions, checkpoints, retries and run reports |
+| `play_worker.py` | Isolated single-page adapter with HTTPS verification and timeouts |
+| `google_play.py` | Review validation and normalization |
+| `google_play_storage.py` | Shared app/review tables and deduplicating writes |
+| `audit_play.py` | Reconcile snapshots, counts, dates and database records |
+| `inspect_play.py` | Readable offline preview, review JSON and database snapshot |
+
+These files are in `review_ingestion/`. The main tables are `apps`, `reviews`, `collection_runs`, `review_observations`, `play_jobs`, `play_pages` and `play_attempts`. The older `collection_run_apps` table is retained for compatibility with the first prototype.
+
+## Limits and source decision
+
+Google Play is promising for a bounded prototype, with freshness still unresolved for one tested app. This short test does not prove long-term availability, expired-token recovery or historical completeness. Empty pages are conservatively flagged for investigation. Rejected rows retain reasons and source snapshots; they are not silently accepted. Ratings are source star scores, not sentiment predictions.
+
+The adapter uses the pinned third-party `google-play-scraper==1.2.7`. Its public `reviews()` helper can swallow request errors; the isolated adapter uses its single-page primitive so those errors remain visible. That private interface is a maintenance risk and must be checked before any dependency upgrade. See [project comparison and design decisions](docs/google-play-v2-findings.md).
+
+The [existing public website](https://product-review-data.review-data-lab.workers.dev/) still demonstrates the historical Amazon prototype. Google Play currently runs through the commands above and has a local inspection page. See [Amazon findings](FINDINGS.md).
 
 ## Tests
 
@@ -74,4 +92,6 @@ The Amazon adapter, sample results, and website are retained so the source decis
 .venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-The unit tests use local fixtures and do not contact Google Play or Amazon.
+Tests use fixtures, including failed requests, timeout handling, transaction rollback, resume, repeated pages, invalid records, duplicate records, concurrent collectors, timestamp conversion and export checks. The dated live reports are in `samples/google_play_v2_*.json`.
+
+Use a fresh `google_play_v2.sqlite3` for this version. The first prototype incorrectly labelled local naive timestamps as UTC. Existing v1 timestamps are not silently rewritten; recollect the relevant records with v2.

@@ -1,0 +1,161 @@
+{
+  "schema_version": 2,
+  "runs": [
+    {
+      "run_id": "d337d5b6-c712-4dd3-bb95-970ebc85d68e",
+      "source": "google_play",
+      "config": {
+        "apps": [
+          {
+            "app_id": "com.spotify.music",
+            "label": "Spotify"
+          },
+          {
+            "app_id": "com.duolingo",
+            "label": "Duolingo"
+          },
+          {
+            "app_id": "com.google.android.apps.maps",
+            "label": "Google Maps"
+          }
+        ],
+        "lang": "en",
+        "country": "us",
+        "count": 50,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7"
+      },
+      "generated_at": "2026-09-25T21:13:42.584543Z",
+      "status": "bounded_success",
+      "coverage": "bounded_sample_not_complete_history",
+      "apps": [
+        {
+          "app_id": "com.duolingo",
+          "label": "Duolingo",
+          "status": "paused",
+          "pages": 2,
+          "can_resume": true,
+          "error": null,
+          "raw_records": 100,
+          "accepted_records": 100,
+          "duplicates": 0,
+          "rejected_records": 0,
+          "new_records": 0,
+          "repeated_records": 100
+        },
+        {
+          "app_id": "com.google.android.apps.maps",
+          "label": "Google Maps",
+          "status": "paused",
+          "pages": 2,
+          "can_resume": true,
+          "error": null,
+          "raw_records": 100,
+          "accepted_records": 100,
+          "duplicates": 0,
+          "rejected_records": 0,
+          "new_records": 0,
+          "repeated_records": 100
+        },
+        {
+          "app_id": "com.spotify.music",
+          "label": "Spotify",
+          "status": "paused",
+          "pages": 2,
+          "can_resume": true,
+          "error": null,
+          "raw_records": 100,
+          "accepted_records": 100,
+          "duplicates": 0,
+          "rejected_records": 0,
+          "new_records": 1,
+          "repeated_records": 99
+        }
+      ],
+      "database_integrity_check": "ok",
+      "foreign_key_issues": 0,
+      "unique_reviews_in_database": 601,
+      "observations_in_run": 300,
+      "failed_attempts": 0
+    },
+    {
+      "run_id": "ce328676-f542-4406-a519-a6dfacbcbba3",
+      "source": "google_play",
+      "config": {
+        "apps": [
+          {
+            "app_id": "com.spotify.music",
+            "label": "Spotify"
+          },
+          {
+            "app_id": "com.duolingo",
+            "label": "Duolingo"
+          },
+          {
+            "app_id": "com.google.android.apps.maps",
+            "label": "Google Maps"
+          }
+        ],
+        "lang": "en",
+        "country": "us",
+        "count": 50,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7"
+      },
+      "generated_at": "2026-09-25T21:14:27.964346Z",
+      "status": "bounded_success",
+      "coverage": "bounded_sample_not_complete_history",
+      "apps": [
+        {
+          "app_id": "com.duolingo",
+          "label": "Duolingo",
+          "status": "paused",
+          "pages": 2,
+          "can_resume": true,
+          "error": null,
+          "raw_records": 100,
+          "accepted_records": 100,
+          "duplicates": 0,
+          "rejected_records": 0,
+          "new_records": 0,
+          "repeated_records": 100
+        },
+        {
+          "app_id": "com.google.android.apps.maps",
+          "label": "Google Maps",
+          "status": "paused",
+          "pages": 2,
+          "can_resume": true,
+          "error": null,
+          "raw_records": 100,
+          "accepted_records": 100,
+          "duplicates": 0,
+          "rejected_records": 0,
+          "new_records": 0,
+          "repeated_records": 100
+        },
+        {
+          "app_id": "com.spotify.music",
+          "label": "Spotify",
+          "status": "paused",
+          "pages": 2,
+          "can_resume": true,
+          "error": null,
+          "raw_records": 100,
+          "accepted_records": 100,
+          "duplicates": 0,
+          "rejected_records": 0,
+          "new_records": 0,
+          "repeated_records": 100
+        }
+      ],
+      "database_integrity_check": "ok",
+      "foreign_key_issues": 0,
+      "unique_reviews_in_database": 601,
+      "observations_in_run": 300,
+      "failed_attempts": 0
+    }
+  ]
+}

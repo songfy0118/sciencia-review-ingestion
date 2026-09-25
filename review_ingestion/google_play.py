@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import unicodedata
 from dataclasses import asdict, dataclass
@@ -41,7 +42,9 @@ class GooglePlayReview:
 
     @property
     def content_hash(self) -> str:
-        value = f"{self.score}\n{self.content}\n{self.reply_content or ''}"
+        fields = self.to_dict()
+        fields.pop("collected_at")
+        value = json.dumps(fields, ensure_ascii=False, sort_keys=True)
         return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
@@ -75,11 +78,15 @@ def datetime_text(value: Any) -> str | None:
     if value is None:
         return None
     if isinstance(value, datetime):
-        if value.tzinfo is None:
-            value = value.replace(tzinfo=timezone.utc)
+        # The upstream parser uses datetime.fromtimestamp: naive values are LOCAL.
         return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
     text = clean_text(value)
-    return text or None
+    if not text:
+        return None
+    parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        raise ValueError("String timestamps must include a timezone.")
+    return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def normalize_review(
@@ -89,6 +96,8 @@ def normalize_review(
     source_url: str,
     collected_at: str,
 ) -> GooglePlayReview:
+    if not isinstance(raw, dict):
+        raise ValueError("Review must be an object.")
     review_id = clean_text(raw.get("reviewId"))
     content = clean_text(raw.get("content"))
     score = raw.get("score")
@@ -134,25 +143,23 @@ def collect_app(
     app_id = validate_app_id(app_id)
     if not 1 <= count <= 200:
         raise ValueError("count must be between 1 and 200 for one bounded request.")
-    if app_fetcher is None or review_fetcher is None:
-        try:
-            from google_play_scraper import Sort, app, reviews
-        except ImportError as exc:
-            raise RuntimeError("Install dependencies with: pip install -r requirements.txt") from exc
-        app_fetcher = app
-        review_fetcher = reviews
-        newest_sort = Sort.NEWEST
-
     collected_at = utc_now()
     source_url = app_url(app_id, lang, country)
-    metadata = app_fetcher(app_id, lang=lang, country=country)
-    raw_reviews, continuation_token = review_fetcher(
-        app_id,
-        lang=lang,
-        country=country,
-        sort=newest_sort,
-        count=count,
-    )
+    if app_fetcher is None and review_fetcher is None:
+        from .play_pipeline import fetch_page
+        page = fetch_page(app_id=app_id, lang=lang, country=country,
+                          count=count, cursor=None, timeout=25)
+        metadata = {}
+        raw_reviews = page["records"]
+        has_more = bool(page["cursor"])
+    else:
+        if app_fetcher is None or review_fetcher is None:
+            raise ValueError("Provide both fixture fetchers or neither")
+        metadata = app_fetcher(app_id, lang=lang, country=country)
+        raw_reviews, continuation_token = review_fetcher(
+            app_id, lang=lang, country=country, sort=newest_sort, count=count,
+        )
+        has_more = bool(getattr(continuation_token, "token", None))
 
     normalized: list[GooglePlayReview] = []
     skipped = 0
@@ -182,4 +189,4 @@ def collect_app(
         genre=clean_text(metadata.get("genre")),
         source_url=source_url,
     )
-    return app_record, normalized, continuation_token is not None, skipped
+    return app_record, normalized, has_more, skipped

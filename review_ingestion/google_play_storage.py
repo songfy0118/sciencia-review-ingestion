@@ -145,6 +145,7 @@ def upsert_reviews(
           replied_at=excluded.replied_at,
           source_url=excluded.source_url,
           last_collected_at=excluded.last_collected_at
+        WHERE excluded.last_collected_at >= reviews.last_collected_at
         """,
         [
             (

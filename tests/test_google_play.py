@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 
 from review_ingestion.google_play import collect_app, normalize_review, validate_app_id
 from review_ingestion.google_play_storage import (
@@ -41,7 +42,7 @@ class GooglePlayCollectorTests(unittest.TestCase):
             return {"title": "Example App", "developer": "Example Co", "genre": "Tools"}
 
         def review_fetcher(*args, **kwargs):
-            return [raw_review(), raw_review()], object()
+            return [raw_review(), raw_review()], SimpleNamespace(token="next")
 
         app, reviews, has_more, skipped = collect_app(
             "com.example.app",
@@ -64,6 +65,14 @@ class GooglePlayCollectorTests(unittest.TestCase):
                 source_url="https://play.google.com/store/apps/details?id=com.example.app",
                 collected_at="2026-09-24T12:00:00Z",
             )
+
+    def test_terminal_token_object_does_not_mean_more_pages(self) -> None:
+        _, _, has_more, _ = collect_app(
+            "com.example.app",
+            app_fetcher=lambda *a, **k: {"title": "Example"},
+            review_fetcher=lambda *a, **k: ([raw_review()], SimpleNamespace(token=None)),
+        )
+        self.assertFalse(has_more)
 
     def test_database_upserts_reviews_and_keeps_run_observations(self) -> None:
         def app_fetcher(*args, **kwargs):
