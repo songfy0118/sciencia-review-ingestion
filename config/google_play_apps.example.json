@@ -1,0 +1,14 @@
+[
+  {
+    "app_id": "com.spotify.music",
+    "label": "Spotify"
+  },
+  {
+    "app_id": "com.duolingo",
+    "label": "Duolingo"
+  },
+  {
+    "app_id": "com.google.android.apps.maps",
+    "label": "Google Maps"
+  }
+]

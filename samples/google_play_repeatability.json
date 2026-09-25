@@ -1,0 +1,155 @@
+{
+  "source": "google_play",
+  "generated_at": "2026-09-25T20:37:15.563898Z",
+  "apps_requested": 3,
+  "runs_requested": 3,
+  "successful_app_runs": 9,
+  "expected_app_runs": 9,
+  "unique_reviews_in_database": 150,
+  "database_integrity_check": "ok",
+  "foreign_key_issues": 0,
+  "suitability": "promising_for_prototype",
+  "limitations": [
+    "Uses an unofficial third-party scraper rather than an official Google Play review API.",
+    "Results depend on language, country, sort order, and the requested recent-review window.",
+    "The live Google Play response format can change and requires ongoing contract checks.",
+    "This bounded test does not claim complete historical coverage."
+  ],
+  "runs": [
+    {
+      "run_id": "f4014a58-3cf3-49fe-bc7f-0ee8364ad887",
+      "sequence_number": 1,
+      "started_at": "2026-09-25T20:37:04.987604Z",
+      "completed_at": "2026-09-25T20:37:07.648914Z",
+      "status": "completed",
+      "apps": [
+        {
+          "app_id": "com.spotify.music",
+          "label": "Spotify",
+          "status": "collected",
+          "requested_count": 50,
+          "received_count": 50,
+          "new_count": 50,
+          "repeated_count": 0,
+          "skipped_count": 0,
+          "continuation_available": true,
+          "overlap_with_previous_run": null
+        },
+        {
+          "app_id": "com.duolingo",
+          "label": "Duolingo",
+          "status": "collected",
+          "requested_count": 50,
+          "received_count": 50,
+          "new_count": 50,
+          "repeated_count": 0,
+          "skipped_count": 0,
+          "continuation_available": true,
+          "overlap_with_previous_run": null
+        },
+        {
+          "app_id": "com.google.android.apps.maps",
+          "label": "Google Maps",
+          "status": "collected",
+          "requested_count": 50,
+          "received_count": 50,
+          "new_count": 50,
+          "repeated_count": 0,
+          "skipped_count": 0,
+          "continuation_available": true,
+          "overlap_with_previous_run": null
+        }
+      ]
+    },
+    {
+      "run_id": "16a3afea-40b2-4774-86c4-d912f60d4ec4",
+      "sequence_number": 2,
+      "started_at": "2026-09-25T20:37:09.669308Z",
+      "completed_at": "2026-09-25T20:37:11.389536Z",
+      "status": "completed",
+      "apps": [
+        {
+          "app_id": "com.spotify.music",
+          "label": "Spotify",
+          "status": "collected",
+          "requested_count": 50,
+          "received_count": 50,
+          "new_count": 0,
+          "repeated_count": 50,
+          "skipped_count": 0,
+          "continuation_available": true,
+          "overlap_with_previous_run": 1.0
+        },
+        {
+          "app_id": "com.duolingo",
+          "label": "Duolingo",
+          "status": "collected",
+          "requested_count": 50,
+          "received_count": 50,
+          "new_count": 0,
+          "repeated_count": 50,
+          "skipped_count": 0,
+          "continuation_available": true,
+          "overlap_with_previous_run": 1.0
+        },
+        {
+          "app_id": "com.google.android.apps.maps",
+          "label": "Google Maps",
+          "status": "collected",
+          "requested_count": 50,
+          "received_count": 50,
+          "new_count": 0,
+          "repeated_count": 50,
+          "skipped_count": 0,
+          "continuation_available": true,
+          "overlap_with_previous_run": 1.0
+        }
+      ]
+    },
+    {
+      "run_id": "8d3a70d7-4cd6-4dd9-b223-fa54fe39ae47",
+      "sequence_number": 3,
+      "started_at": "2026-09-25T20:37:13.438125Z",
+      "completed_at": "2026-09-25T20:37:15.518999Z",
+      "status": "completed",
+      "apps": [
+        {
+          "app_id": "com.spotify.music",
+          "label": "Spotify",
+          "status": "collected",
+          "requested_count": 50,
+          "received_count": 50,
+          "new_count": 0,
+          "repeated_count": 50,
+          "skipped_count": 0,
+          "continuation_available": true,
+          "overlap_with_previous_run": 1.0
+        },
+        {
+          "app_id": "com.duolingo",
+          "label": "Duolingo",
+          "status": "collected",
+          "requested_count": 50,
+          "received_count": 50,
+          "new_count": 0,
+          "repeated_count": 50,
+          "skipped_count": 0,
+          "continuation_available": true,
+          "overlap_with_previous_run": 1.0
+        },
+        {
+          "app_id": "com.google.android.apps.maps",
+          "label": "Google Maps",
+          "status": "collected",
+          "requested_count": 50,
+          "received_count": 50,
+          "new_count": 0,
+          "repeated_count": 50,
+          "skipped_count": 0,
+          "continuation_available": true,
+          "overlap_with_previous_run": 1.0
+        }
+      ]
+    }
+  ]
+}

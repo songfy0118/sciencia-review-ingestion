@@ -1,83 +1,77 @@
-# Product Review Data
+# Review Ingestion Pipeline
 
-This repository is a small feasibility test for a repeatable review-ingestion workflow. It accepts a defined set of Amazon product identifiers or URLs, makes a limited request, detects common access barriers, extracts review fields when they are present, and stores the result in SQLite.
+This repository evaluates live review sources and stores normalized review data in one centralized SQLite database. Google Play is now the primary prototype source. The earlier Amazon collector remains in the repository as a completed feasibility study because its access results were not stable enough for a repeatable pipeline.
 
-The current scope is intentionally narrow:
+## Current result
 
-- input: a small list of product ASINs or URLs;
-- collected fields: review ID, text, rating, date, product identifier, variation, verification flag, source URL, and collection time;
-- downloadable output: a formatted Excel workbook, review-only JSON, a SQLite import script, and a separate technical run log;
-- final local storage: SQLite;
-- excluded for now: category-wide discovery, product comparison, sentiment analysis, and model training.
+The first Google Play repeatability test collected the 50 newest US-English reviews for Spotify, Duolingo, and Google Maps in three consecutive runs.
 
-## Public web demo
+- 9 of 9 app collections completed successfully.
+- Every app returned 50 valid records in every run.
+- Runs two and three repeated the same bounded review window, giving 100% overlap with the previous run.
+- The centralized database contained 150 unique reviews and 450 per-run observations.
+- SQLite integrity and foreign-key checks passed.
+- A continuation token was available in every collection, so later work can add controlled pagination and resume support.
 
-The `site/` directory contains the public Review Collector. Enter one Amazon.com ASIN or product URL, collect an available sample, inspect full review text, search/filter the sample, and download a formatted Excel workbook, review-only JSON, or a SQLite import script. The Excel workbook follows the supplied research-table reference with wrapped text, usable column widths, filters, a frozen header row, and a separate run-summary sheet. The parser uses Cloudflare's native HTMLRewriter to read text within each review field. It preserves paragraphs, removes duplicate IDs, keeps unknown ratings and purchase verification as null, and retains raw dates alongside normalized dates. The web route makes at most three page requests. It does not log in, solve CAPTCHA, paginate, or claim to retrieve all historical reviews. Per-request outcomes and data-quality counts are included in a separate technical run log.
+See [Google Play findings](docs/google-play-findings.md) and the machine-readable [repeatability report](samples/google_play_repeatability.json).
 
-The website does not persist visitor queries or review text. There are two SQLite paths. Download the SQL import and run it in SQLite or DB Browser for SQLite, or download the review-only JSON and use the validated Python importer below. Both paths create `products`, `reviews`, and `ingestion_runs`; the JSON importer performs stricter row-by-row validation before writing.
+## Run the Google Play test
 
-```powershell
-python -m review_ingestion.import_web --input B09XS7JWHH-reviews.json --db data/web-reviews.sqlite3
-```
-
-The importer validates every row before loading, uses products/reviews/ingestion_runs tables, enforces foreign keys and rating constraints, preserves nulls, and upserts on `(product_asin, review_id)`. Re-importing the same file does not duplicate review rows. Older exports cannot overwrite newer observations. Use a new database for web exports; the legacy CLI database is not silently migrated. See [data contract](docs/data-contract.md) and [quality review](docs/quality-review.md).
-
-Run the website locally with:
+Python 3.11 or newer is recommended.
 
 ```powershell
-cd site
-npm ci
-npm run dev
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe -m review_ingestion.google_play_cli `
+  --input config\google_play_apps.example.json `
+  --db data\google_play_reviews.sqlite3 `
+  --report data\google_play_repeatability.json `
+  --runs 3 `
+  --count 50 `
+  --delay 2
 ```
 
-## Run
+The input file contains Google Play app IDs such as `com.spotify.music`. One command collects several apps repeatedly and writes all results into the same database. Repeated reviews update the existing record instead of creating duplicates.
 
-Python 3.11 or newer is recommended. The prototype uses only the Python standard library.
+## Centralized database
 
-```powershell
-python -m review_ingestion.cli `
-  --input config/products.example.json `
-  --db data/reviews.sqlite3 `
-  --csv data/reviews.csv `
-  --report data/run_report.json
-```
+The SQLite database is the primary output. It contains:
 
-The collector makes a small bounded set of requests per product: the dedicated review page first, followed by limited product-page checks when no review records are exposed. It does not attempt to bypass sign-in, CAPTCHA, or other access controls.
+- `apps`: one row per Google Play app;
+- `reviews`: one normalized row per unique app and review ID;
+- `collection_runs`: one row per complete pipeline run;
+- `collection_run_apps`: the status and counts for every app in each run;
+- `review_observations`: a trace showing which reviews appeared in each run.
 
-## Output
+Review fields include the source review ID, app ID, author name, review text, rating, helpful-vote count, app version, review timestamp, developer response, source URL, and first/last collection times.
 
-- `data/reviews.sqlite3` contains `ingestion_runs`, `products`, and `reviews` tables.
-- `data/reviews.csv` is an inspection export and may contain zero rows when access is restricted.
-- `data/run_report.json` records HTTP status, page classification, response size, extracted record count, and errors without saving raw page HTML.
+## Main files
 
-## Initial Amazon finding
+- `review_ingestion/google_play.py`: collects and normalizes Google Play app and review data.
+- `review_ingestion/google_play_storage.py`: creates and updates the centralized SQLite database.
+- `review_ingestion/google_play_cli.py`: runs repeated collection across several apps and creates the report.
+- `config/google_play_apps.example.json`: example app list.
+- `samples/google_play_repeatability.json`: results from the first live repeated-collection test.
+- `tests/test_google_play.py`: validation, normalization, deduplication, and database tests.
 
-The live feasibility check found that the dedicated Amazon review page returned an HTTP 200 response whose page content was a sign-in screen. Two consecutive anonymous requests to the same product page then produced different results: one exposed no review records and the next exposed 13. A signed-in interactive browser also displayed review records. This indicates that review availability depends on request/session context and was not repeatable in this small test.
+## Current limitations
 
-Recommendation: do not treat direct anonymous Amazon HTML collection as a reliable recurring source yet. Keep this adapter as a documented feasibility test. If approved, evaluate an authorized API/data provider or a small number of alternative live review sources before expanding the pipeline.
+- The collector uses the unofficial `google-play-scraper` package rather than an official review API.
+- Results depend on language, country, sort order, and the selected review window.
+- The current test intentionally requests only 50 reviews per app and does not claim complete historical coverage.
+- The collector detects that more pages are available, but durable continuation-token checkpoints and automatic resume are the next implementation step.
+- Live page or response changes can still require maintenance, so scheduled repeatability checks are needed.
 
-Compare repeated runs with:
+## Amazon feasibility study
 
-```powershell
-python -m review_ingestion.repeatability `
-  samples/amazon_run_1.json samples/amazon_run_2.json `
-  --output samples/repeatability_summary.json
-```
+Amazon-specific development is paused. The experiment showed that the same ASIN could expose reviews in one request and return sign-in or verification in another. Pagination could also stop unpredictably. These results are documented in [FINDINGS.md](FINDINGS.md), and the earlier [public web demo](https://product-review-data.review-data-lab.workers.dev/) remains available as historical prototype evidence.
+
+The Amazon adapter, sample results, and website are retained so the source decision remains reviewable. They are not the recommended foundation for the next ingestion stage.
 
 ## Tests
 
 ```powershell
-python -m unittest discover -s tests -v
+.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-The tests use local fixtures and do not contact Amazon.
-
-Web parser and collection regression tests run in the same Worker runtime as production, using the already installed Miniflare dependency of Wrangler. No new packages are required:
-
-```powershell
-cd site
-npm test
-npm run typecheck
-npm run lint
-npm run build
-```
+The unit tests use local fixtures and do not contact Google Play or Amazon.
