@@ -148,7 +148,7 @@ class PipelineTests(unittest.TestCase):
         result = export_database(self.db, output)
         self.assertEqual(result["unique_reviews"], 1)
         document = (output / "index.html").read_text(encoding="utf-8")
-        self.assertNotIn("<script>", document)
+        self.assertNotIn("<script>alert(1)</script>", document)
         self.assertIn("&lt;script&gt;", document)
         self.assertEqual(json.loads((output / "reviews.json").read_text())[0]["content"], "<script>alert(1)</script>")
         with closing(sqlite3.connect(output / "reviews.sqlite3")) as c:

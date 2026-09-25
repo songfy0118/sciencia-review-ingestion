@@ -18,6 +18,22 @@ The database is local and persistent on the machine running the collector. It is
 
 ## Collect reviews
 
+### One-command refresh
+
+After installing the requirements below, run:
+
+```powershell
+.venv\Scripts\python.exe -m review_ingestion.refresh_play --input config/google_play_apps.example.json --db data/google_play_v2.sqlite3 --pages 2 --count 50
+```
+
+This collects reviews, creates a separate SQLite snapshot, audits that snapshot, and generates an inspection page with app filtering, text search and 20-row pagination. The command prints the page path. Each refresh gets its own directory in `data/cycles/`; earlier snapshots are preserved. `data/cycles/latest.json` points to the latest refresh result, including failures.
+
+Status is `ready`, `warning` (for example, old review dates), `needs_attention` (collection or storage checks failed), or `failed` (the refresh could not finish). A warning is not a completeness guarantee. Exit code is nonzero for `needs_attention` and `failed`. Failed source requests cannot be reported as success just because older reviews exist. Add `--resume RUN_ID` with the same configuration to retry a checkpoint.
+
+Snapshot directories are local backups on the same disk; they are not off-site disaster recovery. No recurring background task is enabled by this command. Review and remove old snapshots yourself when no longer needed.
+
+### Setup and collection-only command
+
 Use Python 3.11 or newer. Windows PowerShell:
 
 ```powershell
@@ -57,7 +73,7 @@ Saved cursors may expire or become invalid upstream. A failed resume is reported
 .venv\Scripts\python.exe -m review_ingestion.inspect_play --db data/google_play_v2.sqlite3 --output data/inspection
 ```
 
-Open `data/inspection/index.html` in a browser. It shows counts and up to 100 readable review rows, with links to:
+Open `data/inspection/index.html` in a browser. It shows counts, app and text filters, and paginated review rows, with links to:
 
 - `reviews.json`: actual normalized review records, including text, rating, timestamps and app IDs;
 - `reviews.sqlite3`: a consistent copy of the actual database, ready to open in a SQLite viewer. This is a database file, not a SQL import script.
