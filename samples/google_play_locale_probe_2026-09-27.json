@@ -1,0 +1,27 @@
+{
+  "app_id": "com.duolingo",
+  "generated_at": "2026-09-27T21:01:42.343377Z",
+  "samples": [
+    {
+      "country_requested": "us",
+      "lang_requested": "en",
+      "collected_at": "2026-09-27T21:01:38.996607Z",
+      "status": "received",
+      "records": 50,
+      "unique_ids": 50,
+      "newest_returned_review": "2026-09-10T20:31:09Z",
+      "same_ids_as_first_country": null
+    },
+    {
+      "country_requested": "gb",
+      "lang_requested": "en",
+      "collected_at": "2026-09-27T21:01:41.395884Z",
+      "status": "received",
+      "records": 50,
+      "unique_ids": 50,
+      "newest_returned_review": "2026-09-10T20:31:09Z",
+      "same_ids_as_first_country": true
+    }
+  ],
+  "limitations": "Requested locales are not verified reviewer locations. This comparison does not identify the cause of stale results."
+}

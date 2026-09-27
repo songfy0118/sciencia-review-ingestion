@@ -1,0 +1,226 @@
+{
+  "run": {
+    "run_id": "cea1cfbb-fc3b-4233-92e9-f7b4a115cbf2",
+    "source": "google_play",
+    "config": {
+      "apps": [
+        {
+          "app_id": "com.spotify.music",
+          "label": "Spotify"
+        },
+        {
+          "app_id": "com.duolingo",
+          "label": "Duolingo"
+        },
+        {
+          "app_id": "com.google.android.apps.maps",
+          "label": "Google Maps"
+        }
+      ],
+      "lang": "en",
+      "country": "us",
+      "count": 50,
+      "sort": "NEWEST",
+      "adapter": "strict-single-page-v2",
+      "package": "1.2.7"
+    },
+    "generated_at": "2026-09-27T21:00:51.517305Z",
+    "status": "bounded_success",
+    "coverage": "bounded_sample_not_complete_history",
+    "apps": [
+      {
+        "app_id": "com.duolingo",
+        "label": "Duolingo",
+        "status": "paused",
+        "pages": 1,
+        "can_resume": true,
+        "error": null,
+        "raw_records": 50,
+        "accepted_records": 50,
+        "duplicates": 0,
+        "rejected_records": 0,
+        "new_records": 49,
+        "repeated_records": 1
+      },
+      {
+        "app_id": "com.google.android.apps.maps",
+        "label": "Google Maps",
+        "status": "paused",
+        "pages": 1,
+        "can_resume": true,
+        "error": null,
+        "raw_records": 50,
+        "accepted_records": 50,
+        "duplicates": 0,
+        "rejected_records": 0,
+        "new_records": 50,
+        "repeated_records": 0
+      },
+      {
+        "app_id": "com.spotify.music",
+        "label": "Spotify",
+        "status": "paused",
+        "pages": 1,
+        "can_resume": true,
+        "error": null,
+        "raw_records": 50,
+        "accepted_records": 50,
+        "duplicates": 0,
+        "rejected_records": 0,
+        "new_records": 50,
+        "repeated_records": 0
+      }
+    ],
+    "database_integrity_check": "ok",
+    "foreign_key_issues": 0,
+    "unique_reviews_in_database": 773,
+    "observations_in_run": 150,
+    "failed_attempts": 0
+  },
+  "audit": {
+    "generated_at": "2026-09-27T21:00:51.614328Z",
+    "integrity": "ok",
+    "foreign_key_issues": 0,
+    "committed_pages": 30,
+    "source_records_seen": 1500,
+    "unique_reviews": 773,
+    "snapshot_backed_unique_reviews": 773,
+    "snapshot_mismatches": 0,
+    "count_issues": [],
+    "apps": [
+      {
+        "app_id": "com.duolingo",
+        "unique_reviews": 249,
+        "oldest_review": "2026-08-29T09:44:31Z",
+        "newest_review": "2026-09-10T20:31:09Z",
+        "newest_review_age_days": 17.02,
+        "freshness_warning": "Newest returned review is over seven days old; investigate source freshness",
+        "comparable_run_ids": [
+          "cea1cfbb-fc3b-4233-92e9-f7b4a115cbf2",
+          "520e6638-3afd-48c1-b2b0-67480ae7822a"
+        ],
+        "comparison_parameters": {
+          "pages": 1,
+          "lang": "en",
+          "country": "us",
+          "count": 50,
+          "sort": "NEWEST"
+        },
+        "review_id_jaccard": 0.0101
+      },
+      {
+        "app_id": "com.google.android.apps.maps",
+        "unique_reviews": 263,
+        "oldest_review": "2026-09-24T14:40:28Z",
+        "newest_review": "2026-09-26T20:56:12Z",
+        "newest_review_age_days": 1.0,
+        "freshness_warning": null,
+        "comparable_run_ids": [
+          "cea1cfbb-fc3b-4233-92e9-f7b4a115cbf2",
+          "520e6638-3afd-48c1-b2b0-67480ae7822a"
+        ],
+        "comparison_parameters": {
+          "pages": 1,
+          "lang": "en",
+          "country": "us",
+          "count": 50,
+          "sort": "NEWEST"
+        },
+        "review_id_jaccard": 0.0
+      },
+      {
+        "app_id": "com.spotify.music",
+        "unique_reviews": 261,
+        "oldest_review": "2026-09-24T15:24:43Z",
+        "newest_review": "2026-09-26T21:00:14Z",
+        "newest_review_age_days": 1.0,
+        "freshness_warning": null,
+        "comparable_run_ids": [
+          "cea1cfbb-fc3b-4233-92e9-f7b4a115cbf2",
+          "520e6638-3afd-48c1-b2b0-67480ae7822a"
+        ],
+        "comparison_parameters": {
+          "pages": 1,
+          "lang": "en",
+          "country": "us",
+          "count": 50,
+          "sort": "NEWEST"
+        },
+        "review_id_jaccard": 0.0
+      }
+    ],
+    "storage_checks_passed": true,
+    "coverage": "Bounded sample; storage checks cannot establish source completeness or freshness"
+  },
+  "evaluation": {
+    "run_id": "cea1cfbb-fc3b-4233-92e9-f7b4a115cbf2",
+    "generated_at": "2026-09-27T21:00:51.621299Z",
+    "apps": [
+      {
+        "app_id": "com.duolingo",
+        "label": "Duolingo",
+        "status": "paused",
+        "pages": 1,
+        "unique_reviews_in_run": 50,
+        "sample_collected_at": "2026-09-27T21:00:49.000602Z",
+        "newest_returned_review": "2026-09-10T20:31:09Z",
+        "newest_review_age_days_at_collection": 17.02,
+        "comparison": {
+          "previous_run_id": "520e6638-3afd-48c1-b2b0-67480ae7822a",
+          "hours_between_samples": 46.97,
+          "new_ids_in_window": 49,
+          "ids_no_longer_in_window": 49,
+          "changed_text_rating_or_reply": 0,
+          "id_jaccard": 0.0101
+        },
+        "warnings": [
+          "Newest returned review was over seven days old at collection"
+        ]
+      },
+      {
+        "app_id": "com.google.android.apps.maps",
+        "label": "Google Maps",
+        "status": "paused",
+        "pages": 1,
+        "unique_reviews_in_run": 50,
+        "sample_collected_at": "2026-09-27T21:00:51.479615Z",
+        "newest_returned_review": "2026-09-26T20:56:12Z",
+        "newest_review_age_days_at_collection": 1.0,
+        "comparison": {
+          "previous_run_id": "520e6638-3afd-48c1-b2b0-67480ae7822a",
+          "hours_between_samples": 46.97,
+          "new_ids_in_window": 50,
+          "ids_no_longer_in_window": 50,
+          "changed_text_rating_or_reply": 0,
+          "id_jaccard": 0.0
+        },
+        "warnings": []
+      },
+      {
+        "app_id": "com.spotify.music",
+        "label": "Spotify",
+        "status": "paused",
+        "pages": 1,
+        "unique_reviews_in_run": 50,
+        "sample_collected_at": "2026-09-27T21:00:45.864296Z",
+        "newest_returned_review": "2026-09-26T21:00:14Z",
+        "newest_review_age_days_at_collection": 1.0,
+        "comparison": {
+          "previous_run_id": "520e6638-3afd-48c1-b2b0-67480ae7822a",
+          "hours_between_samples": 46.97,
+          "new_ids_in_window": 50,
+          "ids_no_longer_in_window": 50,
+          "changed_text_rating_or_reply": 0,
+          "id_jaccard": 0.0
+        },
+        "warnings": []
+      }
+    ],
+    "recommendation": "investigate_source_quality",
+    "limitations": [
+      "A changed or unchanged bounded window does not prove historical completeness.",
+      "IDs leaving a window are not evidence of deleted reviews.",
+      "Seven days is a diagnostic threshold, not a promised freshness requirement."
+    ]
+  }
+}

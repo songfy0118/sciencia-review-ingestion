@@ -2,9 +2,11 @@
 
 Collect a defined list of Google Play apps, save review records into one persistent SQLite database, and resume from the last committed page. This is a bounded research prototype. Amazon work is paused; its code and findings remain as the earlier source-feasibility experiment.
 
-**For a quick review:** start with [the current findings](docs/google-play-v2-findings.md), then [the source and storage audit](samples/google_play_v2_audit.json).
+**For a quick review:** start with [the September 27 cross-day findings](docs/google-play-cross-day-findings.md), then [the measured results](samples/google_play_cross_day_2026-09-27.json). The [initial adapter and recovery findings](docs/google-play-v2-findings.md) remain available.
 
 ## What was tested
+
+On September 27, another one-page collection across the same three apps was compared with an equal-size sample from about 47 hours earlier. All three requests succeeded; 149 additional unique reviews were stored (773 total). Duolingo returned different IDs but its newest review was still 17 days old. An additional US/GB probe returned identical IDs and did not resolve that freshness question. These are discrete tests, not 47 hours of continuous operation.
 
 On September 25, 2026, the collector fetched two pages each for Spotify, Duolingo and Google Maps, exited, and resumed in a new process for two more pages. Two later runs collected the first two pages again, separated by a 30-second interval.
 
@@ -27,6 +29,8 @@ After installing the requirements below, run:
 ```
 
 This collects reviews, creates a separate SQLite snapshot, audits that snapshot, and generates an inspection page with app filtering, text search and 20-row pagination. The command prints the page path. Each refresh gets its own directory in `data/cycles/`; earlier snapshots are preserved. `data/cycles/latest.json` points to the latest refresh result, including failures.
+
+Open `data/cycles/index.html` for refresh history. Each result also includes `evaluation.json`, comparing the actual returned sample with an earlier run using matching settings. Freshness warnings use this run's source snapshots, so previously stored fresh reviews cannot hide a stale response. New IDs in a sample do not necessarily mean newly posted reviews. Use `--output data/inspection` to publish the same history into the existing local preview directory.
 
 Status is `ready`, `warning` (for example, old review dates), `needs_attention` (collection or storage checks failed), or `failed` (the refresh could not finish). A warning is not a completeness guarantee. Exit code is nonzero for `needs_attention` and `failed`. Failed source requests cannot be reported as success just because older reviews exist. Add `--resume RUN_ID` with the same configuration to retry a checkpoint.
 
@@ -90,6 +94,9 @@ The exported database also contains page snapshots, attempts and checkpoints. Th
 | `google_play.py` | Review validation and normalization |
 | `google_play_storage.py` | Shared app/review tables and deduplicating writes |
 | `audit_play.py` | Reconcile snapshots, counts, dates and database records |
+| `evaluate_play.py` | Compare per-run freshness, IDs and edited reviews |
+| `refresh_play.py` | Collect, check and preserve results in a local history page |
+| `probe_play.py` | Small locale comparison without changing the main database |
 | `inspect_play.py` | Readable offline preview, review JSON and database snapshot |
 
 These files are in `review_ingestion/`. The main tables are `apps`, `reviews`, `collection_runs`, `review_observations`, `play_jobs`, `play_pages` and `play_attempts`. The older `collection_run_apps` table is retained for compatibility with the first prototype.

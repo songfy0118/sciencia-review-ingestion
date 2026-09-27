@@ -27,7 +27,9 @@ class RefreshTests(unittest.TestCase):
         folder = Path(health["snapshot"]).parent
         self.assertEqual(json.loads((folder / "reviews.json").read_text())[0]["content"], "Useful")
         self.assertTrue(json.loads((folder / "audit.json").read_text())["storage_checks_passed"])
-        self.assertIn("Review freshness", (folder / "index.html").read_text(encoding="utf-8"))
+        self.assertIn("over seven days old", (folder / "index.html").read_text(encoding="utf-8"))
+        self.assertTrue((folder / "evaluation.json").exists())
+        self.assertIn(health['cycle_id'], (self.options['output'] / 'index.html').read_text(encoding='utf-8'))
 
     def test_exception_preserves_previous_snapshot_and_publishes_failure(self):
         first = refresh(**self.options, collector=partial(run_once, fetcher=self.collect))
