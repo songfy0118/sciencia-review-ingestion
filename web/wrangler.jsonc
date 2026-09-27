@@ -1,0 +1,10 @@
+{
+  "name": "product-review-data",
+  "main": "worker.mjs",
+  "account_id": "73a600bb57f344087ca6d21d30e27ff6",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": true,
+  "assets": {"directory": "./public", "binding": "ASSETS", "run_worker_first": true},
+  "d1_databases": [{"binding": "DB", "database_name": "app-review-data", "database_id": "ce22e450-eac6-47d2-878f-d06080c71156"}],
+  "vars": {"VERSION": "google-play-public-2026-09-27"}
+}

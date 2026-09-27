@@ -2,6 +2,12 @@
 
 Collect a defined list of Google Play apps, save review records into one persistent SQLite database, and resume from the last committed page. This is a bounded research prototype. Amazon work is paused; its code and findings remain as the earlier source-feasibility experiment.
 
+## Try the public preview
+
+**[Open App Reviews](https://product-review-data.review-data-lab.workers.dev/)** — no login or local files required. Search the shared library by app name or review text, filter stars/helpful votes, and collect a small sample using a Google Play app link. Reviews are stored in Cloudflare D1. Each public run requests up to 25 reviews per page, with up to three pages and a shared limit of 60 page requests per hour. Scheduled updates are not enabled.
+
+The public preview lives in [web/](web/). Its JavaScript source adapter follows the `google-play-scraper` request format; the research pipeline below still uses the Python package directly. The cloud database was seeded from selected local review fields, excluding author names. It is separate from the local SQLite database; subsequent writes are not automatically synchronized between them. See [deployment and verification](docs/public-preview.md).
+
 ## Two stages of the project
 
 | Stage | Where to look | Status |
@@ -25,7 +31,7 @@ On September 25, 2026, the collector fetched two pages each for Spotify, Duoling
 - Resume added later pages; repeating the recent window updated existing records without duplicating them.
 - Duolingo's newest returned review was approximately 15 days old despite requesting `NEWEST`. This needs further investigation; successful collection does not establish source freshness or complete coverage.
 
-The database is local and persistent on the machine running the collector. It is shared by all runs using the same database path. No always-on cloud collection service is configured.
+The Python collector database is local and persistent on the machine running the collector. It is shared by all runs using the same database path. The public preview has a separate cloud database; neither version schedules automatic collection.
 
 ## Collect reviews
 

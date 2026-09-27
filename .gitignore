@@ -8,3 +8,6 @@ data/*.csv
 data/*.json
 data/inspection/
 data/cycles/
+data/deployment/
+web/.wrangler/
+.wrangler/

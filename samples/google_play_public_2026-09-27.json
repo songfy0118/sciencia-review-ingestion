@@ -1,0 +1,73 @@
+{
+  "checked_at": "2026-09-27T22:50:22.151Z",
+  "anonymous": true,
+  "url": "https://product-review-data.review-data-lab.workers.dev",
+  "before_count": 1231,
+  "apps": 9,
+  "after_count": 1242,
+  "maps_search_count": 331,
+  "maps_all_rows_correct": true,
+  "unknown_search_count": 0,
+  "maps_collection": {
+    "run_id": "5051f406-2fe7-4c0b-af27-993a92ecfaaf",
+    "app_id": "com.google.android.apps.maps",
+    "label": "Google Maps",
+    "observed": 25,
+    "saved": 25,
+    "pages": 1,
+    "can_resume": true,
+    "warning": null,
+    "message": "Saved 25 reviews from Google Maps. Existing IDs were updated, not added twice."
+  },
+  "repeat_status": 200,
+  "repeat_collection": {
+    "run_id": "67bada03-e055-42cf-890e-5ffa479f60ab",
+    "app_id": "com.spotify.music",
+    "label": "Spotify",
+    "observed": 25,
+    "saved": 25,
+    "pages": 1,
+    "can_resume": true,
+    "warning": null,
+    "message": "Saved 25 reviews from Spotify. Existing IDs were updated, not added twice."
+  },
+  "prior_runs": [
+    {
+      "run_id": "cec5fb98-ee48-406a-ab64-2703d10163d3",
+      "label": "Spotify",
+      "pages": 1,
+      "status": "ready",
+      "observed": 25
+    },
+    {
+      "run_id": "a428de55-a78e-4024-9f39-da73c11cd538",
+      "label": "Spotify",
+      "pages": 0,
+      "status": "failed",
+      "observed": 0
+    }
+  ],
+  "export_count": 338,
+  "export_has_author": false,
+  "resume_test": {
+    "run": {
+      "run_id": "cec5fb98-ee48-406a-ab64-2703d10163d3",
+      "app_id": "com.spotify.music",
+      "label": "Spotify",
+      "started_at": "2026-09-27T22:49:21.968Z",
+      "completed_at": "2026-09-27T22:50:54.167Z",
+      "status": "ready",
+      "pages": 2,
+      "observed": 50,
+      "warning": null,
+      "error": null,
+      "can_resume": 1
+    },
+    "immediate_repeat_request_status": 429
+  },
+  "worker_version": "a52959fd-9976-4dcc-82c0-820e92548d22",
+  "tests": {
+    "worker": 10,
+    "python": 46
+  }
+}
