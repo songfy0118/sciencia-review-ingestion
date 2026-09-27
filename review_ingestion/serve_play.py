@@ -16,6 +16,18 @@ from .google_play_cli import load_apps
 from .refresh_play import read_health, refresh
 
 
+ICON_DIRECTORY = Path(__file__).with_name('app_icons')
+ICON_FILES = {path.name for path in ICON_DIRECTORY.glob('*') if path.suffix in ('.png', '.jpg')}
+
+
+def icon_url(app_id):
+    for extension in ('.png', '.jpg'):
+        name = app_id + extension
+        if name in ICON_FILES:
+            return '/icons/' + name
+    return None
+
+
 def parse_app(value: str) -> str:
     if not isinstance(value, str) or len(value) > 1000:
         raise ValueError('Enter a Google Play app ID or product link.')
@@ -59,12 +71,28 @@ class Collector:
             return dict(apps=config['apps'], pages=pages, count=config['count'],
                         country=config['country'], lang=config['lang'], resume=resume)
         values = request.get('apps', [])
+        if not isinstance(values, list):
+            raise ValueError('Choose apps from the list or add a Google Play link.')
+        values = list(values)
+        extra = request.get('extra_app', '')
+        extra_name = request.get('extra_name', '')
+        if not isinstance(extra, str) or not isinstance(extra_name, str) or len(extra_name) > 80:
+            raise ValueError('Use a Google Play link and an app name of at most 80 characters.')
+        extra = extra.strip()
+        if extra:
+            values.append(extra)
         if not isinstance(values, list) or not 1 <= len(values) <= 5:
             raise ValueError('Choose between one and five apps.')
         ids = [parse_app(value) for value in values]
         if len(set(ids)) != len(ids):
             raise ValueError('An app appears more than once. Remove the duplicate.')
         labels = {a['app_id']: a['label'] for a in self.apps}
+        if self.db.is_file():
+            with closing(sqlite3.connect(self.db.resolve().as_uri() + '?mode=ro', uri=True)) as c:
+                for app_id, label in c.execute('SELECT app_id, label FROM apps'):
+                    labels.setdefault(app_id, label)
+        if extra and extra_name.strip() and ids[-1] not in labels:
+            labels[ids[-1]] = extra_name.strip()
         return dict(apps=[dict(app_id=i, label=labels.get(i, i)) for i in ids], pages=pages, count=count)
 
     def start(self, request):
@@ -96,7 +124,9 @@ class Collector:
 
     def state(self):
         with self.lock:
-            result = dict(active=self.active, message=self.message, apps=self.apps, started_at=self.started_at)
+            result = dict(active=self.active, message=self.message,
+                          apps=[dict(app, icon=icon_url(app['app_id'])) for app in self.apps],
+                          started_at=self.started_at)
         cycles, errors = [], []
         for path in self.output.glob('*/health.json'):
             if len(path.parent.name) != 32 or any(c not in '0123456789abcdef' for c in path.parent.name):
@@ -142,7 +172,7 @@ def make_server(collector, port=8768):
             self.send_header('Cache-Control', 'no-store')
             self.send_header('X-Content-Type-Options', 'nosniff')
             self.send_header('Referrer-Policy', 'no-referrer')
-            self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'")
+            self.send_header('Content-Security-Policy', "default-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'")
             if download:
                 self.send_header('Content-Disposition', f'attachment; filename="{download}"')
             self.end_headers()
@@ -162,6 +192,11 @@ def make_server(collector, port=8768):
                 return self.send(200, Path(__file__).with_name('play_dashboard.html').read_bytes(), 'text/html; charset=utf-8')
             if path == '/api/state':
                 return self.json(200, collector.state() | {'token': token})
+            if path.startswith('/icons/'):
+                name = path.removeprefix('/icons/')
+                if name in ICON_FILES:
+                    icon = ICON_DIRECTORY / name
+                    return self.send(200, icon.read_bytes(), 'image/png' if name.endswith('.png') else 'image/jpeg')
             parts = path.strip('/').split('/')
             if len(parts) == 3 and parts[0] == 'results' and len(parts[1]) == 32 and all(c in '0123456789abcdef' for c in parts[1]) and parts[2] in FILES:
                 file = (collector.output / parts[1] / parts[2]).resolve()

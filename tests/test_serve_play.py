@@ -1,5 +1,7 @@
 import http.client
 import json
+import sqlite3
+from contextlib import closing
 import tempfile
 import threading
 import unittest
@@ -111,3 +113,34 @@ class ControlPanelTests(unittest.TestCase):
         for value in ('https://example.com/?id=com.example.app', 'https://play.google.com@evil.example/store/apps/details?id=com.example.app'):
             with self.assertRaises(ValueError):
                 parse_app(value)
+
+    def test_new_app_shares_database_without_mixing_reviews_or_losing_its_name(self):
+        self.release.set()
+        body = {'apps': ['com.example.app'],
+                'extra_app': 'https://play.google.com/store/apps/details?id=com.example.other',
+                'extra_name': 'Another app', 'count': 25}
+        self.assertEqual(self.post(body)[0], 202)
+        self.collector.thread.join(5)
+        with closing(sqlite3.connect(self.collector.db)) as c:
+            # The fixture returns the same review ID for both apps.
+            self.assertEqual(c.execute('SELECT count(*) FROM reviews').fetchone()[0], 2)
+            self.assertEqual(c.execute('SELECT count(DISTINCT app_id) FROM reviews').fetchone()[0], 2)
+            self.assertEqual(c.execute('SELECT label FROM apps WHERE app_id=?',
+                                      ('com.example.other',)).fetchone()[0], 'Another app')
+        self.assertEqual(self.collector.prepare({'apps': ['com.example.other']})['apps'][0]['label'], 'Another app')
+        self.assertEqual(self.post(body)[0], 202)
+        self.collector.thread.join(5)
+        self.assertEqual(self.collector.state()['stored_reviews'], 2)
+        result = self.collector.state()['cycles'][0]['result_url']
+        status, page = self.request('GET', result)
+        self.assertEqual(status, 200)
+        self.assertIn(b'Another app', page)
+
+    def test_extra_app_validation_and_combined_limit(self):
+        for body in ({'apps': [], 'extra_app': 'Uber'},
+                     {'apps': ['com.example.app'], 'extra_app': 'com.example.app'},
+                     {'apps': [], 'extra_app': 'com.example.other', 'extra_name': 'x' * 81},
+                     {'apps': ['com.example.a', 'com.example.b', 'com.example.c', 'com.example.d', 'com.example.e'],
+                      'extra_app': 'com.example.f'}):
+            with self.subTest(body=body):
+                self.assertEqual(self.post(body)[0], 400)

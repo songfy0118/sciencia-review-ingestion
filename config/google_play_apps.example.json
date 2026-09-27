@@ -10,5 +10,25 @@
   {
     "app_id": "com.google.android.apps.maps",
     "label": "Google Maps"
+  },
+  {
+    "app_id": "com.whatsapp",
+    "label": "WhatsApp"
+  },
+  {
+    "app_id": "com.netflix.mediaclient",
+    "label": "Netflix"
+  },
+  {
+    "app_id": "com.google.android.youtube",
+    "label": "YouTube"
+  },
+  {
+    "app_id": "com.instagram.android",
+    "label": "Instagram"
+  },
+  {
+    "app_id": "com.reddit.frontpage",
+    "label": "Reddit"
   }
 ]

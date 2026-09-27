@@ -16,6 +16,22 @@ from urllib.request import Request, urlopen
 from .google_play import datetime_text
 
 
+def validate_response(body: str, pattern) -> None:
+    """Reject unknown pagination shapes before upstream's silent fallback."""
+    try:
+        envelope = json.loads(pattern.findall(body)[0])
+        payload = json.loads(envelope[0][2])
+    except (ValueError, TypeError, IndexError, KeyError) as exc:
+        raise ValueError('Unrecognized Google Play review response') from exc
+    if (not isinstance(payload, list) or len(payload) != 3
+            or not isinstance(payload[0], list)
+            or not isinstance(payload[1], list) or len(payload[1]) != 2):
+        raise ValueError('Unrecognized pagination structure; source end is not confirmed')
+    token = payload[1][1]
+    if token is not None and (not isinstance(token, str) or not token):
+        raise ValueError('Invalid continuation token; source end is not confirmed')
+
+
 def fetch(request: dict) -> dict:
     if version("google-play-scraper") != "1.2.7":
         raise RuntimeError("Adapter requires google-play-scraper==1.2.7")
@@ -34,6 +50,9 @@ def fetch(request: dict) -> dict:
             body = response.read().decode("utf-8")
         if "com.google.play.gateway.proto.PlayGatewayError" in body:
             raise RuntimeError("Google Play gateway rejected this request")
+        # _fetch_review_items() also swallows token parsing errors, converting
+        # them into None. Validate the observed response shape before it runs.
+        validate_response(body, module.Regex.REVIEWS)
         return body
 
     # The public reviews() catches transport/parser errors and returns an empty

@@ -16,6 +16,8 @@ The current milestone is a small, repeated Google Play collection across several
 
 The project brief permits SQLite for local prototyping and treats scheduling as a future iteration. Its learning resources cover acquisition, relational design, normalization and later text classification; they do not require using every linked framework. No new dependency was added in this iteration.
 
+The current local result browser shows app names and cached app icons, searches saved review text or app names, and filters by source stars and helpful votes. Review IDs and UTC timestamps are available under record details. The collector does not capture review photos or videos, and the star filters are not sentiment classification. A colleague cannot use this machine's localhost address; a hosted read-only data source and explicit publication scope would be required before sharing a searchable link.
+
 ## Comparison with established projects
 
 - [JoMingyu/google-play-scraper](https://github.com/JoMingyu/google-play-scraper): continuation tokens and bounded requests are useful primitives. We retain the pinned Python adapter but add durable state, atomic loading and explicit error reports around it. The upstream private interface remains a maintenance dependency.
@@ -41,3 +43,11 @@ The live control-panel test repeated the three-app, 50-review sample: 150 observ
 Duolingo remains flagged: the newest returned review is still September 10. The earlier US/GB comparison did not resolve this. This is an unresolved source suitability finding, not a fixed freshness guarantee. Additional collection dates and an independent source comparison are needed before a deployment decision. Long-term uptime, all-review coverage, public hosting and an always-on scheduler have not been validated or delivered.
 
 See [cross-day evidence](google-play-cross-day-findings.md) and [the data contract](google-play-data-contract.md).
+
+### App search and extension check
+
+The September 27 follow-up repeated a one-page, 25-review request for each of the eight configured apps (200 returned records), then added Uber through the local web form (25 records). All records were merged into the same SQLite database, which now held 1,221 unique reviews across nine apps. Integrity checks passed, with zero foreign-key issues or source-snapshot mismatches. Duolingo still returned September 10 as its newest review, so the eight-app run retained its freshness warning.
+
+Browser checks covered all nine exact app names, the unknown-app message, rating/helpful-vote filters, and adding an unlisted app. One bug was found and fixed: an exact app-name search could include reviews of other apps that mentioned that name. Exact names now select the matching app; other keywords still search review text and partial names. The no-results message links to collection, and custom apps can have a display name. Repeating a custom app preserves that name. Searches do not initiate upstream requests.
+
+The CLI refresh and local panel now use the same default snapshot directory, `data/inspection`, so future command-line refreshes appear in the panel. Earlier `data/cycles` results remain preserved separately. The 46 current Google Play tests and six archived Amazon tests passed. [Aggregate evidence](../samples/google_play_search_validation_2026-09-27.json) contains counts and findings without review text or author names. Scheduling frequency, app-selection policy and shared deployment remain undecided.

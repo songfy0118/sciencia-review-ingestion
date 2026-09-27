@@ -1,0 +1,29 @@
+{
+  "date": "2026-09-27",
+  "source": "Google Play Store app reviews",
+  "five_app_test": {
+    "run_id": "f1a10980-5ecc-4aad-a8df-29d4fa6a9310",
+    "status": "ready",
+    "requested_pages_per_app": 1,
+    "requested_reviews_per_page": 25,
+    "stored_reviews_by_app": {
+      "com.whatsapp": 25,
+      "com.netflix.mediaclient": 25,
+      "com.google.android.youtube": 25,
+      "com.instagram.android": 25,
+      "com.reddit.frontpage": 25
+    },
+    "source_or_storage_issues": []
+  },
+  "database_after_test": {
+    "apps": 8,
+    "unique_reviews": 1048,
+    "google_maps_app_reviews": 313
+  },
+  "limits": [
+    "The five new apps were sampled once; repeatability is not established for them.",
+    "The saved review counts do not represent complete app review histories.",
+    "Google Maps app reviews are distinct from reviews of places in Google Maps.",
+    "Earlier Duolingo samples returned unexpectedly old review dates."
+  ]
+}

@@ -2,9 +2,18 @@
 
 Collect a defined list of Google Play apps, save review records into one persistent SQLite database, and resume from the last committed page. This is a bounded research prototype. Amazon work is paused; its code and findings remain as the earlier source-feasibility experiment.
 
-**For a quick review:** start with [the implementation review and validation](docs/implementation-review.md), then [the cross-day source findings](docs/google-play-cross-day-findings.md). The [initial adapter and recovery findings](docs/google-play-v2-findings.md) remain available.
+## Two stages of the project
+
+| Stage | Where to look | Status |
+| --- | --- | --- |
+| Amazon feasibility test | [archive/amazon/](archive/amazon/) — original code, website, samples and findings | Preserved; development paused because access varied between runs |
+| Google Play collection | [review_ingestion/](review_ingestion/) — current Python workflow using `google-play-scraper` | Active; repeated collection into one SQLite database, with checkpoints and data checks |
+
+**For a quick review:** read [the current findings](docs/google-play-cross-day-findings.md), then try the local panel below. [samples/](samples/) contains Google Play test reports; [tests/](tests/) covers the current pipeline. The [implementation review](docs/implementation-review.md) explains the checks and remaining limits.
 
 ## What was tested
+
+On September 27, five more app IDs were tested for one page of 25 reviews each: WhatsApp, Netflix, YouTube, Instagram and Reddit. All five requests and storage checks passed, adding 125 unique records. Combined with the earlier Spotify, Duolingo and Google Maps samples, the database then held 1,048 unique reviews across eight apps. This is one successful sample from the five new apps, not a repeated reliability result for them. Google Maps had 313 stored app reviews. [Aggregate test evidence](samples/google_play_eight_apps_2026-09-27.json) records the counts without publishing review text.
 
 On September 27, another one-page collection across the same three apps was compared with an equal-size sample from about 47 hours earlier. All three requests succeeded; 149 additional unique reviews were stored (773 total). Duolingo returned different IDs but its newest review was still 17 days old. An additional US/GB probe returned identical IDs and did not resolve that freshness question. These are discrete tests, not 47 hours of continuous operation.
 
@@ -28,7 +37,11 @@ After installing the requirements, start:
 .venv\Scripts\python.exe -m review_ingestion.serve_play
 ```
 
-Open http://127.0.0.1:8768/. Choose the apps, start collection and browse the saved results. An optional field accepts another Google Play app ID or link. The panel supports 1–5 pages per app and up to five apps; a saved run can continue from its committed cursor using its original settings. Data goes into `data/google_play_v2.sqlite3`, and snapshots are kept in `data/inspection/`.
+Open http://127.0.0.1:8768/. Choose the apps, start collection and browse the saved results. The eight examples are starting points, not an allowlist. To collect another app, paste its Google Play link or app ID and optionally enter a display name. The panel supports 1–5 pages per app and up to five apps; a saved run can continue from its committed cursor using its original settings. Data goes into `data/google_play_v2.sqlite3`, and snapshots are kept in `data/inspection/`.
+
+Searching the results page reads saved records; it does not contact Google Play. An exact saved app name selects that app, while other keywords search review text and partial app names. If an app has not been collected, use **Add another app**, run collection, and open the new result. The old result is a fixed snapshot. Helpful votes are the source's count of people who marked a review helpful; stars are the reviewer's rating of the app.
+
+For a small first test, leave Google Maps selected, keep one page per app, and click **Start collection**. This collects reviews of the Google Maps Android app, not reviews of businesses or places in Maps. Eight verified app IDs are listed as examples; select up to five per run. Open **Browse latest saved data**, choose Google Maps in the app filter, and inspect the rows or download the review JSON or SQLite database. Run the same input again to check repeatability; existing review IDs are updated rather than inserted twice. **Saved checkpoints** lets you continue a run to later pages. Duolingo is also included as a diagnostic case: its returned review dates have been unexpectedly old.
 
 Keep the command running while using the panel. It is local only and does not schedule background collection. An older `python -m http.server` preview must be stopped before using the same port. For the implementation review, source comparisons and remaining limits, see [requirements and validation](docs/implementation-review.md). For tables, export meanings and SQL examples, see [the data contract](docs/google-play-data-contract.md).
 
@@ -40,13 +53,15 @@ After installing the requirements below, run:
 .venv\Scripts\python.exe -m review_ingestion.refresh_play --input config/google_play_apps.example.json --db data/google_play_v2.sqlite3 --pages 2 --count 50
 ```
 
-This collects reviews, creates a separate SQLite snapshot, audits that snapshot, and generates an inspection page with app filtering, text search and 20-row pagination. The command prints the page path. Each refresh gets its own directory in `data/cycles/`; earlier snapshots are preserved. `data/cycles/latest.json` points to the latest refresh result, including failures.
+This collects reviews, creates a separate SQLite snapshot, audits that snapshot, and generates an inspection page with named app tiles, app and review-text search, star-rating and helpful-vote filters, and 20-review pagination. The command prints the page path. Each refresh gets its own directory in `data/inspection/`, shared with the local control panel; earlier snapshots are preserved. `data/inspection/latest.json` points to the latest refresh result, including failures. App icons for the eight examples are cached from their Google Play listings; other apps use an initial until an icon is supplied.
 
-Open `data/cycles/index.html` for refresh history. Each result also includes `evaluation.json`, comparing the actual returned sample with an earlier run using matching settings. Freshness warnings use this run's source snapshots, so previously stored fresh reviews cannot hide a stale response. New IDs in a sample do not necessarily mean newly posted reviews. Use `--output data/inspection` to publish the same history into the existing local preview directory.
+Open `data/inspection/index.html` for refresh history. Each result also includes `evaluation.json`, comparing the actual returned sample with an earlier run using matching settings. Freshness warnings use this run's source snapshots, so previously stored fresh reviews cannot hide a stale response. New IDs in a sample do not necessarily mean newly posted reviews. Older CLI snapshots in `data/cycles/` remain there; use `--output data/cycles` if continuing that separate history.
 
 Status is `ready`, `warning` (for example, old review dates), `needs_attention` (collection or storage checks failed), or `failed` (the refresh could not finish). A warning is not a completeness guarantee. Exit code is nonzero for `needs_attention` and `failed`. Failed source requests cannot be reported as success just because older reviews exist. Add `--resume RUN_ID` with the same configuration to retry a checkpoint.
 
 Snapshot directories are local backups on the same disk; they are not off-site disaster recovery. No recurring background task is enabled by this command. Review and remove old snapshots yourself when no longer needed.
+
+Scheduled collection and a shared database work together: a scheduler would run this refresh command for a chosen app list, merge returned records into the same database, and preserve a report. Searches would read saved data between updates. The schedule and app-selection policy remain open questions; no daily task or all-review backfill is enabled.
 
 ### Setup and collection-only command
 
@@ -89,12 +104,14 @@ Saved cursors may expire or become invalid upstream. A failed resume is reported
 .venv\Scripts\python.exe -m review_ingestion.inspect_play --db data/google_play_v2.sqlite3 --output data/inspection
 ```
 
-Open `data/inspection/index.html` in a browser. It shows counts, app and text filters, and paginated review rows, with links to:
+Open `data/inspection/index.html` in a browser. It shows named apps, text and rating filters, and paginated review cards, with links to:
 
 - `reviews.json`: actual normalized review records, including text, rating, timestamps and app IDs;
 - `reviews.sqlite3`: a consistent copy of the actual database, ready to open in a SQLite viewer. This is a database file, not a SQL import script.
 
 The exported database also contains page snapshots, attempts and checkpoints. These files stay local and are ignored by Git; published sample reports contain counts and findings, not review text or usernames.
+
+The current page is served from `127.0.0.1` and is only available on this computer. A link that works for a colleague would require a hosted read-only search page backed by a hosted database or a deliberately published, regularly updated snapshot. GitHub holds source code and aggregate test evidence; it does not host the local SQLite file. No public Google Play data service or unattended collection schedule has been deployed. Review photos and videos are not present in the current review schema; the page does not offer a media filter. Star groups are source ratings, not predicted sentiment.
 
 ## How the code is organized
 
@@ -120,12 +137,15 @@ Google Play is promising for a bounded prototype, with freshness still unresolve
 
 The adapter uses the pinned third-party `google-play-scraper==1.2.7`. Its public `reviews()` helper can swallow request errors; the isolated adapter uses its single-page primitive so those errors remain visible. That private interface is a maintenance risk and must be checked before any dependency upgrade. See [project comparison and design decisions](docs/google-play-v2-findings.md).
 
-The [existing public website](https://product-review-data.review-data-lab.workers.dev/) still demonstrates the historical Amazon prototype. Google Play currently runs through the commands above and has a local inspection page. See [Amazon findings](FINDINGS.md).
+The adapter also validates the pagination response before the upstream parser runs: a missing or malformed continuation field is a source error, not evidence that the review history ended. Unrecognized response shapes require inspection before the adapter is updated.
+
+The [existing public website](https://product-review-data.review-data-lab.workers.dev/) still demonstrates the historical Amazon prototype. Google Play currently runs through the commands above and has a local control panel. See the [Amazon archive](archive/amazon/README.md) for the preserved source and findings.
 
 ## Tests
 
 ```powershell
 .venv\Scripts\python.exe -m unittest discover -s tests -v
+.venv\Scripts\python.exe -m unittest discover -s archive/amazon/tests -v
 ```
 
 Tests use fixtures, including failed requests, timeout handling, transaction rollback, resume, repeated pages, invalid records, duplicate records, concurrent collectors, timestamp conversion and export checks. The dated live reports are in `samples/google_play_v2_*.json`.

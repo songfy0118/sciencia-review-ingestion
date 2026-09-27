@@ -101,19 +101,23 @@ def refresh(*, apps: list[dict], db: Path, output: Path, collector=run_once, **o
         health["snapshot"] = str((folder / "index.html").resolve())
         health["unique_reviews"] = checks["unique_reviews"]
         # Attach current-cycle results to the already-created inspection page.
-        banner = '<section aria-label="Collection status"><h2>Latest refresh: ' + escape(health["status"].replace("_", " ")) + '</h2>'
-        banner += '<p>' + escape(health["started_at"]) + ' · Run ' + escape(report["run_id"]) + '</p>'
-        banner += ''.join('<p>' + escape(issue) + '</p>' for issue in health["issues"])
-        banner += '<p><a href="../index.html">All refreshes</a> · <a href="run.json">Collection report</a> · <a href="audit.json">Data checks</a> · <a href="evaluation.json">Source evaluation</a></p>'
-        banner += '<div class="scroll"><table><thead><tr><th>App</th><th>Reviews in this run</th><th>Newest review (UTC)</th><th>Hours since comparable sample</th><th>New IDs in window</th></tr></thead><tbody>'
+        status_label = {'ready': 'Collection completed', 'warning': 'Review source warning',
+                        'needs_attention': 'Collection needs attention'}[health['status']]
+        status_class = 'warning' if health['status'] == 'warning' else 'attention' if health['status'] == 'needs_attention' else ''
+        banner = f'<div class="run-status {status_class}" role="status"><strong>{status_label}</strong>'
+        banner += ''.join('<p>' + escape(issue) + '</p>' for issue in health['issues'])
+        banner += '</div><details class="run-details"><summary>Collection details and data checks</summary>'
+        banner += '<p>' + escape(health['started_at']) + ' · Run ' + escape(report['run_id']) + '</p>'
+        banner += '<p><a href="run.json">Collection report</a> · <a href="audit.json">Data checks</a> · <a href="evaluation.json">Source evaluation</a></p>'
+        banner += '<table><thead><tr><th>App</th><th>Reviews in this run</th><th>Newest review (UTC)</th><th>Hours since comparable sample</th><th>New IDs in window</th></tr></thead><tbody>'
         for app in evaluation['apps']:
             comparison = app['comparison'] or {}
             values = [app['label'], app['unique_reviews_in_run'], app['newest_returned_review'] or 'Unavailable',
                       comparison.get('hours_between_samples', 'Not compared'), comparison.get('new_ids_in_window', 'Not compared')]
             banner += '<tr>' + ''.join('<td>' + escape(str(v)) + '</td>' for v in values) + '</tr>'
-        banner += '</tbody></table></div></section>'
+        banner += '</tbody></table></details>'
         page = folder / "index.html"
-        page.write_text(page.read_text(encoding="utf-8").replace('<section>', banner + '<section>', 1), encoding="utf-8")
+        page.write_text(page.read_text(encoding="utf-8").replace('<!-- COLLECTION_STATUS -->', banner, 1), encoding="utf-8")
     except Exception as exc:
         health["status"] = "failed"
         health["issues"].append(f"{type(exc).__name__}: {exc}")
@@ -128,7 +132,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument("--db", required=True, type=Path)
-    parser.add_argument("--output", type=Path, default=Path("data/cycles"))
+    parser.add_argument("--output", type=Path, default=Path("data/inspection"))
     parser.add_argument("--pages", type=int, default=2)
     parser.add_argument("--count", type=int, default=50)
     parser.add_argument("--delay", type=float, default=2)

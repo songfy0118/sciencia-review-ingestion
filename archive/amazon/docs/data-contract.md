@@ -29,7 +29,7 @@ The review-only JSON is an array of normalized records. The formatted Excel work
 
 The Excel workbook uses wrapped text, fixed widths, filtering, frozen headers, typed ratings, and a separate run summary. JSON preserves normalized text exactly and remains the recommended input for the strict Python importer. The SQL script escapes text values and uses the same relational keys and constraints as the SQLite importer.
 
-`python -m review_ingestion.import_web --input <export.json> --db data/web-reviews.sqlite3` validates all rows, loads products and reviews in a transaction, records each import, and checks SQLite integrity and foreign keys. Re-import is idempotent for review rows, while import history records each operation. The earlier feasibility CLI uses its original schema; incompatible existing databases are rejected rather than modified.
+From the repository root, `python -m archive.amazon.import_web --input <export.json> --db data/web-reviews.sqlite3` validates all rows, loads products and reviews in a transaction, records each import, and checks SQLite integrity and foreign keys. Re-import is idempotent for review rows, while import history records each operation. The earlier feasibility CLI uses its original schema; incompatible existing databases are rejected rather than modified.
 
 Example inspection queries:
 

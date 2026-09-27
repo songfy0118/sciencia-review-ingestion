@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>App reviews | Saved collection</title>
+<style>
+:root{color-scheme:light;--ink:#17243a;--muted:#5d6b7d;--line:#dfe5eb;--blue:#254da1;--wash:#f5f7f9;--gold:#a96300}
+*{box-sizing:border-box}body{margin:0;background:var(--wash);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}
+a{color:var(--blue);text-underline-offset:3px}button,input,select{font:inherit}button{cursor:pointer}:focus-visible{outline:3px solid #5284d6;outline-offset:2px}
+.shell{max-width:1120px;margin:auto;padding:0 24px}.topbar{background:white;border-bottom:1px solid var(--line)}.topbar .shell{height:70px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:12px;font-weight:750;letter-spacing:-.02em;font-size:19px}.brand-mark{width:34px;height:34px;border-radius:10px;background:#1e436f;color:white;display:grid;place-items:center;font-size:20px}.topbar a{font-size:14px}.topnav{display:flex;gap:16px;align-items:center}
+.hero{padding:48px 0 22px}.eyebrow{color:var(--blue);font-size:12px;text-transform:uppercase;letter-spacing:.12em;font-weight:800}.hero h1{font-size:clamp(30px,4vw,48px);line-height:1.12;letter-spacing:-.04em;margin:9px 0 12px}.hero p{color:var(--muted);max-width:690px;margin:0}
+.summary{display:flex;align-items:center;gap:28px;margin:24px 0 8px}.summary strong{font-size:26px;letter-spacing:-.03em}.summary span{color:var(--muted);font-size:14px}
+.panel{background:white;border:1px solid var(--line);border-radius:14px;box-shadow:0 7px 26px #2032470a;padding:24px;margin:24px 0}.section-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}.section-head h2{font-size:21px;letter-spacing:-.02em;margin:0 0 6px}.section-head p{margin:0;color:var(--muted);font-size:14px}
+.apps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:18px}.app-tile{display:flex;align-items:center;gap:10px;min-width:0;text-align:left;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;min-height:69px;color:var(--ink)}.app-tile:hover,.app-tile.selected{border-color:#8aabd5;background:#f2f6fc}.app-tile img,.review-app img{width:38px;height:38px;border-radius:10px;object-fit:cover;flex:none}.tile-fallback{width:38px;height:38px;border-radius:10px;background:#e5edfa;color:#214b89;display:grid;place-items:center;font-weight:800;flex:none}.app-tile span.label{font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.app-tile small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+.filters{display:grid;grid-template-columns:minmax(220px,1.8fr) repeat(3,minmax(130px,1fr)) auto;gap:12px;align-items:end;margin:20px 0}.filters label{font-size:13px;font-weight:650;color:#3e4d60}.filters input,.filters select{display:block;width:100%;height:44px;margin-top:6px;border:1px solid #becbd8;border-radius:8px;background:white;padding:0 12px;color:var(--ink)}.filters input::placeholder{color:#718093}.clear{height:44px;border:1px solid #c3cfdd;border-radius:8px;background:white;color:var(--blue);padding:0 15px;font-weight:650}.clear:hover{background:#f2f6fc}
+.note{color:var(--muted);font-size:13px;margin:0 0 20px}.result-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:17px;margin-top:8px}.result-bar h2{font-size:20px;margin:0}.result-bar p{color:var(--muted);font-size:14px;margin:0}
+.review-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}.review-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;min-width:0}.review-card[hidden]{display:none}.review-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.review-app{display:flex;align-items:center;gap:10px;min-width:0;font-weight:700}.review-app span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.review-date{font-size:12px;color:var(--muted);white-space:nowrap}.stars{color:var(--gold);font-size:17px;letter-spacing:1px;margin:15px 0 9px}.stars small{font-size:12px;letter-spacing:0;color:var(--muted);margin-left:6px}.review-text{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;margin:0 0 14px}.review-foot{display:flex;align-items:center;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px}.review-foot details{margin-left:auto}.review-foot summary{cursor:pointer;color:var(--blue)}.record-detail{border-top:1px solid var(--line);margin-top:12px;padding-top:10px;font-size:12px;overflow-wrap:anywhere}.record-detail p{margin:4px 0}.reply{background:#f4f7fb;border-left:3px solid #8aa3c7;padding:10px 12px;margin:12px 0;font-size:14px;white-space:pre-wrap}
+.pagination{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:18px}.pagination button{border:1px solid #c3cfdd;border-radius:8px;background:white;color:var(--blue);padding:9px 15px;min-height:40px;font-weight:650}.pagination button:disabled{opacity:.45;cursor:default}.empty{padding:42px 20px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px;margin-top:18px}
+.downloads{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}.downloads a{display:inline-block;border:1px solid #c3cfdd;border-radius:8px;padding:9px 14px;font-weight:650;text-decoration:none}.downloads a:hover{background:#f2f6fc}
+.run-status{border-radius:10px;padding:12px 16px;background:#edf4f3;border:1px solid #c9dfdb;margin:18px 0}.run-status.warning{background:#fff7e8;border-color:#ead5a8}.run-status.attention{background:#fff0ee;border-color:#edc7c2}.run-status p{margin:5px 0}.run-details{color:var(--muted);font-size:13px;margin:24px 0 48px}.run-details summary{cursor:pointer;color:var(--blue);font-weight:650}.run-details table{border-collapse:collapse;width:100%;margin-top:12px}.run-details th,.run-details td{text-align:left;border-bottom:1px solid var(--line);padding:8px;vertical-align:top}
+@media(max-width:850px){.apps{grid-template-columns:repeat(2,minmax(0,1fr))}.filters{grid-template-columns:repeat(2,minmax(0,1fr))}.filters label:first-child{grid-column:1/-1}.review-grid{grid-template-columns:1fr}}
+@media(max-width:520px){.shell{padding:0 16px}.topbar .shell{height:62px}.topbar a{font-size:12px}.hero{padding-top:32px}.panel{padding:18px;margin:16px 0}.apps{grid-template-columns:1fr 1fr}.app-tile{padding:8px;gap:7px}.app-tile img,.tile-fallback{width:30px;height:30px}.filters{grid-template-columns:1fr}.filters label:first-child{grid-column:auto}.summary{gap:16px}.review-head{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="shell"><div class="brand"><span class="brand-mark" aria-hidden="true">▤</span>App reviews</div><nav class="topnav" aria-label="Workspace"><a href="/" class="local-only">Collect</a><a href="../index.html">All saved runs</a></nav></div></header>
+<main class="shell">
+<div class="hero"><span class="eyebrow">Google Play · Saved collection</span><h1>Explore app reviews</h1><p>Search the reviews already collected across your apps. To get new reviews, start a collection from the local workspace.</p><div class="summary"><div><strong>RECORD_COUNT</strong><br><span>saved reviews</span></div><div><strong>APP_COUNT</strong><br><span>apps</span></div></div></div>
+<!-- COLLECTION_STATUS -->
+<section class="panel" aria-labelledby="apps-heading"><div class="section-head"><div><h2 id="apps-heading">Choose an app</h2><p>Select an app to see its saved reviews.</p></div><a href="/#add-app" class="local-only">Add another app</a></div><div class="apps" id="app-tiles">APP_CARDS</div></section>
+<section class="panel" aria-labelledby="browse-heading"><div class="section-head"><div><h2 id="browse-heading">Find a review</h2><p>Search only the reviews saved in this snapshot.</p></div></div>
+<div class="filters"><label for="search">Search apps or reviews<input id="search" type="search" placeholder="Google Maps, navigation or ads"></label><label for="app">App<select id="app"><option value="">All apps</option>APP_OPTIONS</select></label><label for="rating">Star rating<select id="rating"><option value="">Any rating</option><option value="high">4–5 stars</option><option value="mid">3 stars</option><option value="low">1–2 stars</option></select></label><label for="helpful">Helpful votes<select id="helpful"><option value="">Any</option><option value="1">At least 1</option><option value="10">At least 10</option></select></label><button class="clear" id="clear" type="button">Clear filters</button></div>
+<p class="note">Stars are the reviewer's rating of the app. Helpful votes count how many people marked a review as helpful. Neither is an automatic sentiment label. Review photos and videos are not included.</p>
+<div class="result-bar"><h2>Reviews</h2><p id="count" role="status" aria-live="polite"></p></div><div class="review-grid" id="review-list">REVIEW_CARDS</div><div class="empty" id="empty" hidden><p>No saved reviews match these filters. Try clearing the filters or using another keyword.</p><p>Looking for an app that is not listed? Add its Google Play link in the collection workspace, then open the new results. Searching here does not start a collection.</p><a href="/#add-app" class="local-only">Collect reviews for another app</a></div><div class="pagination"><button id="previous" type="button">Previous</button><button id="next" type="button">Next</button></div></section>
+<section class="panel"><div class="section-head"><div><h2>Download your data</h2><p>These files contain every saved review in this snapshot, regardless of the filters above.</p></div></div><div class="downloads"><a href="reviews.json" download>Review data (JSON)</a><a href="reviews.sqlite3" download>Database copy (SQLite)</a></div><p class="note" style="margin-top:12px">The SQLite copy also includes collection history and checkpoints. Downloads stay on your computer.</p></section>
+</main>
+<script>
+const byId=id=>document.getElementById(id);
+if(location.protocol==='file:')document.querySelectorAll('.local-only').forEach(link=>link.hidden=true);
+const cards=[...document.querySelectorAll('#review-list .review-card')];
+const tiles=[...document.querySelectorAll('#app-tiles .app-tile')];
+let page=0;
+function render(){
+ const chosen=byId('app').value,query=byId('search').value.trim().toLocaleLowerCase(),rating=byId('rating').value,helpful=Number(byId('helpful').value);
+ const namedApps=new Set(query?cards.filter(card=>card.dataset.name===query).map(card=>card.dataset.app):[]);
+ const matches=cards.filter(card=>{
+  const score=Number(card.dataset.score);
+  const queryMatches=!query||(namedApps.size?namedApps.has(card.dataset.app):card.dataset.name.includes(query)||card.querySelector('.review-text').textContent.toLocaleLowerCase().includes(query));
+  return (!chosen||card.dataset.app===chosen)&&queryMatches&&(!rating||(rating==='high'?score>=4:rating==='low'?score<=2:score===3))&&(!helpful||Number(card.dataset.helpful)>=helpful);
+ });
+ page=Math.min(page,Math.max(0,Math.ceil(matches.length/20)-1));
+ cards.forEach(card=>card.hidden=true);
+ matches.slice(page*20,page*20+20).forEach(card=>card.hidden=false);
+ byId('count').textContent=matches.length?`${page*20+1}–${Math.min(page*20+20,matches.length)} of ${matches.length} saved reviews`:'0 saved reviews';
+ byId('empty').hidden=matches.length!==0;
+ byId('previous').disabled=page===0;byId('next').disabled=(page+1)*20>=matches.length;
+ tiles.forEach(tile=>{const active=tile.dataset.app===chosen;tile.classList.toggle('selected',active);tile.setAttribute('aria-pressed',String(active));});
+}
+for(const id of ['app','rating','helpful'])byId(id).addEventListener('change',()=>{page=0;render()});
+byId('search').addEventListener('input',()=>{page=0;render()});
+byId('clear').addEventListener('click',()=>{for(const id of ['app','rating','helpful','search'])byId(id).value='';page=0;render()});
+tiles.forEach(tile=>tile.addEventListener('click',()=>{byId('app').value=tile.dataset.app;byId('search').value='';page=0;render();byId('browse-heading').scrollIntoView({behavior:'smooth',block:'start'})}));
+byId('previous').addEventListener('click',()=>{page--;render()});byId('next').addEventListener('click',()=>{page++;render()});
+document.querySelectorAll('time[datetime]').forEach(el=>{const date=new Date(el.dateTime);if(!Number.isNaN(date.valueOf()))el.textContent=date.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'})});
+window.addEventListener('pageshow',render);render();
+</script>
+</body></html>

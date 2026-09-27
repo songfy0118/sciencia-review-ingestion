@@ -5,7 +5,7 @@ import unittest
 from contextlib import closing
 from pathlib import Path
 
-from review_ingestion.import_web import import_reviews, validate
+from archive.amazon.import_web import import_reviews, validate
 
 
 def record(**changes):

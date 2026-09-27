@@ -1,0 +1,199 @@
+{
+  "date": "2026-09-27",
+  "source": "Google Play app reviews",
+  "eight_app_repeat": {
+    "run_id": "311f4c7e-62d3-4af0-b13a-0a7e40839ee0",
+    "status": "warning",
+    "pages_per_app": 1,
+    "requested_reviews_per_app": 25,
+    "apps": [
+      {
+        "app_id": "com.duolingo",
+        "label": "Duolingo",
+        "status": "paused",
+        "pages": 1,
+        "unique_reviews_in_run": 25,
+        "sample_collected_at": "2026-09-27T22:15:48.924484Z",
+        "newest_returned_review": "2026-09-10T20:31:09Z",
+        "newest_review_age_days_at_collection": 17.07,
+        "comparison": null,
+        "warnings": [
+          "Newest returned review was over seven days old at collection"
+        ]
+      },
+      {
+        "app_id": "com.google.android.apps.maps",
+        "label": "Google Maps",
+        "status": "paused",
+        "pages": 1,
+        "unique_reviews_in_run": 25,
+        "sample_collected_at": "2026-09-27T22:15:51.385252Z",
+        "newest_returned_review": "2026-09-26T22:04:07Z",
+        "newest_review_age_days_at_collection": 1.01,
+        "comparison": {
+          "previous_run_id": "79220f4b-febb-4317-9b07-fe78b6cd134f",
+          "hours_between_samples": 0.14,
+          "new_ids_in_window": 0,
+          "ids_no_longer_in_window": 0,
+          "changed_text_rating_or_reply": 0,
+          "id_jaccard": 1.0
+        },
+        "warnings": []
+      },
+      {
+        "app_id": "com.google.android.youtube",
+        "label": "YouTube",
+        "status": "paused",
+        "pages": 1,
+        "unique_reviews_in_run": 25,
+        "sample_collected_at": "2026-09-27T22:15:59.164163Z",
+        "newest_returned_review": "2026-09-26T22:14:22Z",
+        "newest_review_age_days_at_collection": 1.0,
+        "comparison": {
+          "previous_run_id": "f1a10980-5ecc-4aad-a8df-29d4fa6a9310",
+          "hours_between_samples": 0.67,
+          "new_ids_in_window": 25,
+          "ids_no_longer_in_window": 25,
+          "changed_text_rating_or_reply": 0,
+          "id_jaccard": 0.0
+        },
+        "warnings": []
+      },
+      {
+        "app_id": "com.instagram.android",
+        "label": "Instagram",
+        "status": "paused",
+        "pages": 1,
+        "unique_reviews_in_run": 25,
+        "sample_collected_at": "2026-09-27T22:16:01.757683Z",
+        "newest_returned_review": "2026-09-26T22:08:35Z",
+        "newest_review_age_days_at_collection": 1.01,
+        "comparison": {
+          "previous_run_id": "f1a10980-5ecc-4aad-a8df-29d4fa6a9310",
+          "hours_between_samples": 0.67,
+          "new_ids_in_window": 15,
+          "ids_no_longer_in_window": 15,
+          "changed_text_rating_or_reply": 0,
+          "id_jaccard": 0.25
+        },
+        "warnings": []
+      },
+      {
+        "app_id": "com.netflix.mediaclient",
+        "label": "Netflix",
+        "status": "paused",
+        "pages": 1,
+        "unique_reviews_in_run": 25,
+        "sample_collected_at": "2026-09-27T22:15:56.553776Z",
+        "newest_returned_review": "2026-09-26T22:15:04Z",
+        "newest_review_age_days_at_collection": 1.0,
+        "comparison": {
+          "previous_run_id": "f1a10980-5ecc-4aad-a8df-29d4fa6a9310",
+          "hours_between_samples": 0.67,
+          "new_ids_in_window": 10,
+          "ids_no_longer_in_window": 10,
+          "changed_text_rating_or_reply": 0,
+          "id_jaccard": 0.4286
+        },
+        "warnings": []
+      },
+      {
+        "app_id": "com.reddit.frontpage",
+        "label": "Reddit",
+        "status": "paused",
+        "pages": 1,
+        "unique_reviews_in_run": 25,
+        "sample_collected_at": "2026-09-27T22:16:04.269500Z",
+        "newest_returned_review": "2026-09-26T22:11:34Z",
+        "newest_review_age_days_at_collection": 1.0,
+        "comparison": {
+          "previous_run_id": "f1a10980-5ecc-4aad-a8df-29d4fa6a9310",
+          "hours_between_samples": 0.67,
+          "new_ids_in_window": 6,
+          "ids_no_longer_in_window": 6,
+          "changed_text_rating_or_reply": 0,
+          "id_jaccard": 0.6129
+        },
+        "warnings": []
+      },
+      {
+        "app_id": "com.spotify.music",
+        "label": "Spotify",
+        "status": "paused",
+        "pages": 1,
+        "unique_reviews_in_run": 25,
+        "sample_collected_at": "2026-09-27T22:15:45.990863Z",
+        "newest_returned_review": "2026-09-26T22:15:09Z",
+        "newest_review_age_days_at_collection": 1.0,
+        "comparison": null,
+        "warnings": []
+      },
+      {
+        "app_id": "com.whatsapp",
+        "label": "WhatsApp",
+        "status": "paused",
+        "pages": 1,
+        "unique_reviews_in_run": 25,
+        "sample_collected_at": "2026-09-27T22:15:53.995381Z",
+        "newest_returned_review": "2026-09-26T22:15:49Z",
+        "newest_review_age_days_at_collection": 1.0,
+        "comparison": {
+          "previous_run_id": "f1a10980-5ecc-4aad-a8df-29d4fa6a9310",
+          "hours_between_samples": 0.67,
+          "new_ids_in_window": 25,
+          "ids_no_longer_in_window": 25,
+          "changed_text_rating_or_reply": 0,
+          "id_jaccard": 0.0
+        },
+        "warnings": []
+      }
+    ],
+    "issues": [
+      "com.duolingo: Newest returned review was over seven days old at collection"
+    ]
+  },
+  "unlisted_app_test": {
+    "app_id": "com.ubercab",
+    "label": "Uber",
+    "method": "Local web form with Google Play URL and optional display name",
+    "run_id": "2b68fdab-c122-4f77-8faa-dcfb7a84cc48",
+    "returned_reviews": 25,
+    "status": "ready",
+    "search_result": "25 saved reviews"
+  },
+  "database": {
+    "integrity": "ok",
+    "foreign_key_issues": 0,
+    "unique_reviews": 1221,
+    "snapshot_backed_unique_reviews": 1221,
+    "snapshot_mismatches": 0
+  },
+  "saved_reviews_by_app": {
+    "com.duolingo": 323,
+    "com.google.android.apps.maps": 331,
+    "com.google.android.youtube": 50,
+    "com.instagram.android": 40,
+    "com.netflix.mediaclient": 35,
+    "com.reddit.frontpage": 31,
+    "com.spotify.music": 336,
+    "com.ubercab": 25,
+    "com.whatsapp": 50
+  },
+  "browser_checks": {
+    "all_nine_exact_app_name_searches": "passed",
+    "google_maps_low_stars_with_at_least_one_helpful_vote": 38,
+    "unknown_search": "No saved matches; link to add an app; no automatic collection",
+    "exact_name_regression": "Netflix no longer includes other apps whose review text mentions Netflix"
+  },
+  "automated_tests": {
+    "google_play": 46,
+    "amazon_archive": 6
+  },
+  "limits": [
+    "Duolingo newest returned review is September 10, about 17 days old.",
+    "Small samples do not prove complete review coverage or long-term reliability.",
+    "Uber was collected once in this test.",
+    "The UI searches a saved snapshot, not the live Google Play store.",
+    "No daily schedule or public Google Play service is enabled."
+  ]
+}

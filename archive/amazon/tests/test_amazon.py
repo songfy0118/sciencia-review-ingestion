@@ -1,7 +1,7 @@
 from pathlib import Path
 import unittest
 
-from review_ingestion.amazon import (
+from archive.amazon.amazon import (
     classify_page,
     extract_asin,
     parse_reviews,

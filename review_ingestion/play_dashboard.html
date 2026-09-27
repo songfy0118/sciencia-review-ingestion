@@ -1,15 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Review collection</title>
+<title>App reviews | Collection workspace</title>
 <style>
-:root{color-scheme:light;--ink:#1c2b3b;--muted:#536476;--line:#d9e2ea;--blue:#244fba}
+:root{color-scheme:light;--ink:#17243a;--muted:#5d6b7d;--line:#dfe5eb;--blue:#254da1}
 *{box-sizing:border-box}body{margin:0;background:#f4f6f9;color:var(--ink);font:16px/1.6 system-ui,sans-serif}
 header{background:white;border-bottom:1px solid var(--line)}header>div,main{max-width:1120px;margin:auto;padding:20px 28px}
 header>div{display:flex;justify-content:space-between;align-items:center}header strong{font-size:20px}header span{color:var(--muted);font-size:14px}
 main{padding-top:32px}h1{font-size:32px;line-height:1.2;margin:0 0 12px}h2{font-size:21px;margin:0 0 8px}p{margin:8px 0 16px}.muted,small{color:var(--muted)}
-.layout{display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:start}.card{background:white;border:1px solid var(--line);border-radius:10px;padding:24px;margin:0 0 24px}
-fieldset{border:0;padding:0;margin:18px 0}legend,label.title{font-weight:600}label.app{display:flex;gap:12px;align-items:center;border-bottom:1px solid #edf0f4;padding:10px 0}label.app span{flex:1}label.app small{display:block;font-size:13px}
+.layout{display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:start}.card{background:white;border:1px solid var(--line);border-radius:14px;box-shadow:0 7px 26px #2032470a;padding:24px;margin:0 0 24px}
+fieldset{border:0;padding:0;margin:18px 0}legend,label.title{font-weight:600}label.app{display:flex;gap:12px;align-items:center;border-bottom:1px solid #edf0f4;padding:10px 0}label.app span{flex:1;font-weight:600}label.app img{width:36px;height:36px;border-radius:9px;object-fit:cover}.icon-fallback{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;background:#e5edfa;color:#214b89;font-weight:800}
 input[type=checkbox]{width:18px;height:18px}input[type=text],select,button{font:inherit;padding:10px 12px;border:1px solid #b5c3d2;border-radius:6px}
 input[type=text]{width:100%;margin:8px 0}button{background:white;color:var(--blue);cursor:pointer;font-weight:600;min-height:44px}button.primary{background:var(--blue);color:white;border-color:var(--blue);width:100%;margin-top:10px}
 button:disabled{opacity:.55;cursor:default}a{color:var(--blue);text-underline-offset:3px}:focus-visible{outline:3px solid #3264ce;outline-offset:3px}
@@ -22,16 +22,19 @@ table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;v
 @media(max-width:740px){.layout{grid-template-columns:1fr}header>div,main{padding:18px}.card{padding:18px}h1{font-size:28px}header span{font-size:12px}.settings{gap:12px}th,td{padding:9px}}
 </style></head>
 <body><a href="#main" class="skip">Skip to collection</a>
-<header><div><strong>Review collection</strong><span>Google Play · Local workspace</span></div></header>
-<main id="main"><h1>Collect Google Play reviews</h1>
-<p class="muted">Collect a small review sample from several apps. Records are cleaned and saved to the same database each time.</p>
+<header><div><strong>▤ &nbsp;App reviews</strong><span>Collection workspace · Google Play</span></div></header>
+<main id="main"><h1>Collect app reviews</h1>
+<p class="muted">Choose an app to collect new Google Play reviews. Browse saved reviews from the database on this computer.</p>
 <div id="message" class="status" role="status" aria-live="polite"></div><div id="errors" class="status error" role="alert"></div>
 <div class="layout"><section class="card" aria-labelledby="collect-heading"><h2 id="collect-heading">New collection</h2>
 <p class="muted">Start with the newest available reviews. Existing review IDs are updated instead of added twice.</p>
-<form id="collect"><fieldset><legend>Apps to collect</legend><div id="apps">Loading apps…</div></fieldset>
-<label class="title" for="extra">Another app <span class="muted">(optional)</span></label>
-<input id="extra" type="text" placeholder="App ID or Google Play link" aria-describedby="extra-help">
-<small id="extra-help">For example, com.spotify.music. Choose up to five apps in total.</small>
+<form id="collect"><fieldset><legend>Apps to collect</legend><p class="muted">Choose up to five apps per run. Google Maps means reviews of the app itself, not reviews of places shown in Maps.</p><div id="apps">Loading apps…</div></fieldset>
+<label class="title" for="extra" id="add-app">Add another app <span class="muted">(optional)</span></label>
+<input id="extra" type="text" placeholder="Paste a Google Play link or app ID" aria-describedby="extra-help">
+<small id="extra-help">The app ID is the value after <code>id=</code> in its Google Play URL. Example: <code>com.ubercab</code> for Uber. Uncheck a selected app to collect only the one you add.</small>
+<label class="title" for="extra-name" style="display:block;margin-top:14px">App name <span class="muted">(optional)</span></label>
+<input id="extra-name" type="text" maxlength="80" placeholder="For example, Uber">
+<small>This name labels the saved reviews. The Google Play link or ID above identifies the app. New reviews are added to the same database and appear in the next results page.</small>
 <details><summary>Collection size</summary><div class="settings">
 <label for="pages">Pages per app<select id="pages"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
 <label for="count">Reviews per page<select id="count"><option>25</option><option selected>50</option><option>100</option></select></label>
@@ -52,11 +55,11 @@ const labels={ready:'Checks passed',warning:'Review source quality',needs_attent
 let token='',initialized=false,busy=false,submitting=false,timer;
 function element(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;}
 function link(text,url){const a=element('a',text);a.href=url;return a;}
-function time(value){return new Date(value).toLocaleString();}
+function time(value){return new Date(value).toLocaleString('en-US',{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
 function controls(){byId('start').disabled=busy||submitting||!token;byId('start').textContent=busy?'Collection in progress…':'Start collection';document.querySelectorAll('[data-resume]').forEach(b=>b.disabled=busy||submitting);}
 function show(data){
  token=data.token;busy=data.active;
- if(!initialized){byId('apps').replaceChildren();for(const app of data.apps){const label=element('label',undefined,'app'),input=element('input');input.type='checkbox';input.name='app';input.value=app.app_id;input.checked=true;const name=element('span',app.label);name.append(element('small',app.app_id));label.append(input,name);byId('apps').append(label);}initialized=true;}
+ if(!initialized){byId('apps').replaceChildren();for(const app of data.apps){const label=element('label',undefined,'app'),input=element('input');input.type='checkbox';input.name='app';input.value=app.app_id;input.checked=app.app_id==='com.google.android.apps.maps';const icon=app.icon?element('img'):element('span',app.label.slice(0,1),'icon-fallback');if(app.icon){icon.src=app.icon;icon.alt='';icon.loading='lazy';}const name=element('span',app.label);label.append(input,icon,name);byId('apps').append(label);}initialized=true;}
  byId('total').textContent=data.stored_reviews.toLocaleString();
  if(data.message)byId('message').textContent=data.message;
  byId('errors').textContent=data.errors.join(' ');
@@ -72,6 +75,6 @@ function show(data){
 }
 async function update(){clearTimeout(timer);try{const response=await fetch('/api/state');if(!response.ok)throw Error('Could not read collection status.');show(await response.json());}catch(error){token='';controls();byId('errors').textContent=`${error.message} Check that the local server is running; this page will retry.`;}finally{timer=setTimeout(update,busy?2000:15000);}}
 async function start(payload){submitting=true;controls();byId('errors').textContent='';try{const response=await fetch('/api/collect',{method:'POST',headers:{'Content-Type':'application/json','X-Collection-Token':token},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw Error(data.error);byId('message').textContent=data.message;await update();}catch(error){byId('errors').textContent=error.message;}finally{submitting=false;controls();}}
-byId('collect').addEventListener('submit',event=>{event.preventDefault();const apps=[...document.querySelectorAll('input[name=app]:checked')].map(e=>e.value);if(byId('extra').value.trim())apps.push(byId('extra').value.trim());start({apps,pages:Number(byId('pages').value),count:Number(byId('count').value)});});
+byId('collect').addEventListener('submit',event=>{event.preventDefault();const apps=[...document.querySelectorAll('input[name=app]:checked')].map(e=>e.value);start({apps,extra_app:byId('extra').value.trim(),extra_name:byId('extra-name').value.trim(),pages:Number(byId('pages').value),count:Number(byId('count').value)});});
 update();
 </script></body></html>
