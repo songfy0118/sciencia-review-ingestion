@@ -42,6 +42,8 @@ a{color:#244dac}section{background:white;border:1px solid #dae0e8;border-radius:
 table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:14px;border-bottom:1px solid #e4e8ee;text-align:left;vertical-align:top}
 th{background:#edf1f6}td{overflow-wrap:anywhere}.content{min-width:260px;white-space:pre-wrap}.scroll{overflow:auto}
 input,select,button{font:inherit;padding:8px;border:1px solid #bec9d7;border-radius:4px;margin:4px}button{cursor:pointer}button:disabled{cursor:default;opacity:.5}
+:focus-visible{outline:3px solid #3264ce;outline-offset:3px}caption{text-align:left;padding:8px 0;color:#526171}
+@media(max-width:600px){main{margin:12px auto;padding:12px}section{padding:16px}.content{min-width:180px}input{max-width:90%}}
 </style><main><h1>Review data</h1><p>A saved view of the Google Play collection database.</p>
 <section><h2>Stored reviews</h2><p>RECORD_COUNT unique reviews. This is a collected sample, not the complete review history.</p>
 <ul>APP_SUMMARY</ul><p><a href="reviews.json" download>Download review JSON</a> ·
@@ -51,11 +53,12 @@ input,select,button{font:inherit;padding:8px;border:1px solid #bec9d7;border-rad
 Ratings are the original star scores; no sentiment model has been applied. Dates are UTC.</p>
 <label>App <select id="app"><option value="">All apps</option>APP_OPTIONS</select></label>
 <label>Search <input id="search" type="search" placeholder="Review text or ID"></label>
-<p id="count" role="status"></p><button id="previous">Previous</button><button id="next">Next</button>
-<div class="scroll"><table><thead><tr><th>App</th><th>Rating</th><th>Review date</th><th>Review</th><th>Review ID</th></tr></thead>
+<button id="clear" type="button">Clear filters</button>
+<p id="count" role="status" aria-live="polite"></p><button id="previous">Previous</button><button id="next">Next</button>
+<div class="scroll"><table id="review-table"><caption>Stored review records</caption><thead><tr><th>App</th><th>Rating</th><th>Review date</th><th>Review</th><th>Review ID</th></tr></thead>
 <tbody>REVIEW_ROWS</tbody></table></div></section></main>
 <script>
-const rows = [...document.querySelectorAll('tbody tr')];
+const rows = [...document.querySelectorAll('#review-table tbody tr')];
 const app = document.getElementById('app'), search = document.getElementById('search');
 const previous = document.getElementById('previous'), next = document.getElementById('next');
 let page = 0;
@@ -69,6 +72,8 @@ function render() {
 }
 app.addEventListener('change', () => {page=0;render()});
 search.addEventListener('input', () => {page=0;render()});
+document.getElementById('clear').addEventListener('click', () => {app.value='';search.value='';page=0;render()});
+window.addEventListener('pageshow', render);
 previous.addEventListener('click', () => {page--;render()});
 next.addEventListener('click', () => {page++;render()});
 render();

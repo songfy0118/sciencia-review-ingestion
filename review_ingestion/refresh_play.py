@@ -31,11 +31,25 @@ def write_text_atomic(path: Path, value: str) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def read_health(path: Path) -> dict:
+    health = json.loads(path.read_text(encoding='utf-8'))
+    if (not isinstance(health, dict) or not isinstance(health.get('started_at'), str)
+            or not isinstance(health.get('status'), str) or not isinstance(health.get('issues'), list)
+            or not all(isinstance(issue, str) for issue in health['issues'])):
+        raise ValueError('Invalid saved status fields')
+    return health
+
+
 def publish_history(output: Path) -> None:
     cycles = []
+    damaged = []
     for path in output.glob('*/health.json'):
         if re.fullmatch(r'[0-9a-f]{32}', path.parent.name):
-            health = json.loads(path.read_text(encoding='utf-8'))
+            try:
+                health = read_health(path)
+            except (OSError, ValueError) as exc:
+                damaged.append(f'Cannot read saved status {path.parent.name}: {type(exc).__name__}')
+                continue
             cycles.append((health, path.parent.name))
     cycles.sort(key=lambda entry: entry[0]['started_at'], reverse=True)
     if not cycles:
@@ -53,6 +67,8 @@ def publish_history(output: Path) -> None:
 <p>Each refresh keeps its own data snapshot and checks. Counts are database totals at that time, not new reviews per run. A warning means the result needs review.</p>
 <p>This page shows saved results. It does not start collection or refresh automatically.</p>
 <div class="scroll"><table><thead><tr><th>Started (UTC)</th><th>Status</th><th>Stored reviews</th><th>Notes</th><th>Details</th></tr></thead><tbody>ROWS</tbody></table></div></main></html>'''
+    if damaged:
+        document = document.replace('<div class="scroll">', '<p role="alert">' + '<br>'.join(escape(e) for e in damaged) + '</p><div class="scroll">', 1)
     write_text_atomic(output / 'index.html', document.replace('ROWS', ''.join(rows)))
 
 

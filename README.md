@@ -2,7 +2,7 @@
 
 Collect a defined list of Google Play apps, save review records into one persistent SQLite database, and resume from the last committed page. This is a bounded research prototype. Amazon work is paused; its code and findings remain as the earlier source-feasibility experiment.
 
-**For a quick review:** start with [the September 27 cross-day findings](docs/google-play-cross-day-findings.md), then [the measured results](samples/google_play_cross_day_2026-09-27.json). The [initial adapter and recovery findings](docs/google-play-v2-findings.md) remain available.
+**For a quick review:** start with [the implementation review and validation](docs/implementation-review.md), then [the cross-day source findings](docs/google-play-cross-day-findings.md). The [initial adapter and recovery findings](docs/google-play-v2-findings.md) remain available.
 
 ## What was tested
 
@@ -19,6 +19,18 @@ On September 25, 2026, the collector fetched two pages each for Spotify, Duoling
 The database is local and persistent on the machine running the collector. It is shared by all runs using the same database path. No always-on cloud collection service is configured.
 
 ## Collect reviews
+
+### Local control panel
+
+After installing the requirements, start:
+
+```powershell
+.venv\Scripts\python.exe -m review_ingestion.serve_play
+```
+
+Open http://127.0.0.1:8768/. Choose the apps, start collection and browse the saved results. An optional field accepts another Google Play app ID or link. The panel supports 1–5 pages per app and up to five apps; a saved run can continue from its committed cursor using its original settings. Data goes into `data/google_play_v2.sqlite3`, and snapshots are kept in `data/inspection/`.
+
+Keep the command running while using the panel. It is local only and does not schedule background collection. An older `python -m http.server` preview must be stopped before using the same port. For the implementation review, source comparisons and remaining limits, see [requirements and validation](docs/implementation-review.md). For tables, export meanings and SQL examples, see [the data contract](docs/google-play-data-contract.md).
 
 ### One-command refresh
 
@@ -96,6 +108,7 @@ The exported database also contains page snapshots, attempts and checkpoints. Th
 | `audit_play.py` | Reconcile snapshots, counts, dates and database records |
 | `evaluate_play.py` | Compare per-run freshness, IDs and edited reviews |
 | `refresh_play.py` | Collect, check and preserve results in a local history page |
+| `serve_play.py` | Local controls for starting and continuing bounded collection |
 | `probe_play.py` | Small locale comparison without changing the main database |
 | `inspect_play.py` | Readable offline preview, review JSON and database snapshot |
 

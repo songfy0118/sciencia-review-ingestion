@@ -51,6 +51,14 @@ class RefreshTests(unittest.TestCase):
         self.assertEqual(health["status"], "needs_attention")
         self.assertEqual(health["unique_reviews"], 1)
 
+    def test_damaged_old_status_does_not_block_new_collection(self):
+        damaged = self.options['output'] / ('a' * 32)
+        damaged.mkdir(parents=True)
+        (damaged / 'health.json').write_text('{broken')
+        health = refresh(**self.options, collector=partial(run_once, fetcher=self.collect))
+        self.assertEqual(health['status'], 'warning')
+        self.assertIn('Cannot read saved status', (self.options['output'] / 'index.html').read_text(encoding='utf-8'))
+
 
 if __name__ == "__main__":
     unittest.main()

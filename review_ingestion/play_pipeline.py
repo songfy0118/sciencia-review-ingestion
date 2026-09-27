@@ -59,8 +59,10 @@ def fetch_page(**request) -> dict:
         raise SourceError(f"Worker exited {process.returncode}: {process.stderr[-1000:]}")
     try:
         result = json.loads(process.stdout)
-        if not isinstance(result, dict) or "ok" not in result:
+        if not isinstance(result, dict) or type(result.get("ok")) is not bool:
             raise ValueError("Missing worker status")
+        if not result['ok'] and (not isinstance(result.get('error'), str) or type(result.get('retryable')) is not bool):
+            raise ValueError('Invalid worker error details')
     except (ValueError, TypeError) as exc:
         raise SourceError("Worker returned an invalid response") from exc
     if not result["ok"]:
@@ -149,7 +151,7 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
                     try:
                         payload = fetcher(app_id=app_id, count=count, lang=lang,
                                           country=country, cursor=job["cursor"], timeout=timeout)
-                        if not isinstance(payload.get("records"), list):
+                        if not isinstance(payload, dict) or not isinstance(payload.get("records"), list):
                             raise SourceError("Review response is not a list")
                         cursor = payload.get("cursor")
                         if cursor is not None and (not isinstance(cursor, str) or not cursor):

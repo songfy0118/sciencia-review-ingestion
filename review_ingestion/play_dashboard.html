@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Review collection</title>
+<style>
+:root{color-scheme:light;--ink:#1c2b3b;--muted:#536476;--line:#d9e2ea;--blue:#244fba}
+*{box-sizing:border-box}body{margin:0;background:#f4f6f9;color:var(--ink);font:16px/1.6 system-ui,sans-serif}
+header{background:white;border-bottom:1px solid var(--line)}header>div,main{max-width:1120px;margin:auto;padding:20px 28px}
+header>div{display:flex;justify-content:space-between;align-items:center}header strong{font-size:20px}header span{color:var(--muted);font-size:14px}
+main{padding-top:32px}h1{font-size:32px;line-height:1.2;margin:0 0 12px}h2{font-size:21px;margin:0 0 8px}p{margin:8px 0 16px}.muted,small{color:var(--muted)}
+.layout{display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:start}.card{background:white;border:1px solid var(--line);border-radius:10px;padding:24px;margin:0 0 24px}
+fieldset{border:0;padding:0;margin:18px 0}legend,label.title{font-weight:600}label.app{display:flex;gap:12px;align-items:center;border-bottom:1px solid #edf0f4;padding:10px 0}label.app span{flex:1}label.app small{display:block;font-size:13px}
+input[type=checkbox]{width:18px;height:18px}input[type=text],select,button{font:inherit;padding:10px 12px;border:1px solid #b5c3d2;border-radius:6px}
+input[type=text]{width:100%;margin:8px 0}button{background:white;color:var(--blue);cursor:pointer;font-weight:600;min-height:44px}button.primary{background:var(--blue);color:white;border-color:var(--blue);width:100%;margin-top:10px}
+button:disabled{opacity:.55;cursor:default}a{color:var(--blue);text-underline-offset:3px}:focus-visible{outline:3px solid #3264ce;outline-offset:3px}
+.settings{display:flex;gap:18px;flex-wrap:wrap}.settings label{display:flex;flex-direction:column;gap:6px}details{margin-top:14px}summary{cursor:pointer;font-weight:600;padding:8px 0}
+.status{padding:14px 16px;background:#edf3fd;border-left:4px solid var(--blue);margin:16px 0}.error{background:#fff0ee;border-color:#b93425}.warning{background:#fff7e7;border-color:#b37800}
+.metric{font-size:36px;font-weight:650;line-height:1.2}.badge{font-size:13px;padding:4px 9px;border-radius:4px;background:#edf1f7;color:#2d4158;white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;vertical-align:top;padding:12px;border-bottom:1px solid var(--line)}th{color:var(--muted)}.scroll{overflow-x:auto}td.notes{min-width:240px}
+.job{border-top:1px solid var(--line);padding:14px 0}.job p{margin:4px 0}.job small{overflow-wrap:anywhere}#message:empty,#errors:empty{display:none}.empty{color:var(--muted);padding:16px 0}
+.skip{position:absolute;top:-60px;background:white;padding:10px}.skip:focus{top:0}ul{padding-left:22px}
+@media(max-width:740px){.layout{grid-template-columns:1fr}header>div,main{padding:18px}.card{padding:18px}h1{font-size:28px}header span{font-size:12px}.settings{gap:12px}th,td{padding:9px}}
+</style></head>
+<body><a href="#main" class="skip">Skip to collection</a>
+<header><div><strong>Review collection</strong><span>Google Play · Local workspace</span></div></header>
+<main id="main"><h1>Collect Google Play reviews</h1>
+<p class="muted">Collect a small review sample from several apps. Records are cleaned and saved to the same database each time.</p>
+<div id="message" class="status" role="status" aria-live="polite"></div><div id="errors" class="status error" role="alert"></div>
+<div class="layout"><section class="card" aria-labelledby="collect-heading"><h2 id="collect-heading">New collection</h2>
+<p class="muted">Start with the newest available reviews. Existing review IDs are updated instead of added twice.</p>
+<form id="collect"><fieldset><legend>Apps to collect</legend><div id="apps">Loading apps…</div></fieldset>
+<label class="title" for="extra">Another app <span class="muted">(optional)</span></label>
+<input id="extra" type="text" placeholder="App ID or Google Play link" aria-describedby="extra-help">
+<small id="extra-help">For example, com.spotify.music. Choose up to five apps in total.</small>
+<details><summary>Collection size</summary><div class="settings">
+<label for="pages">Pages per app<select id="pages"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label>
+<label for="count">Reviews per page<select id="count"><option>25</option><option selected>50</option><option>100</option></select></label>
+</div><p class="muted">English · United States · Newest first. These are request settings, not verified reviewer locations. Actual results may be fewer.</p></details>
+<button id="start" class="primary" disabled>Start collection</button></form></section>
+<aside><section class="card"><h2>Your database</h2><p id="total" class="metric">—</p><p class="muted">Unique stored reviews</p>
+<p>Data stays on this computer. Downloads are copies for inspection; you do not need to import them after each run.</p>
+<p id="latest"></p><hr style="border:0;border-top:1px solid var(--line)"><h2>What the checks tell you</h2>
+<ul><li>Whether the requests and storage checks passed.</li><li>How recent the returned review dates are.</li><li>How the sample differs from a comparable earlier run.</li></ul>
+<p class="muted">A successful run does not mean every review was collected. Source warnings stay visible even when collection succeeds.</p></section></aside></div>
+<section class="card"><h2>Saved results</h2><p class="muted">Each refresh preserves its own database snapshot and reports. Times below use your local timezone.</p>
+<div class="scroll"><table><thead><tr><th>Started</th><th>Result</th><th>Stored total</th><th>Notes</th><th>Open</th></tr></thead><tbody id="history"></tbody></table></div><p id="empty" class="empty" hidden>No results yet. Choose an app above to run your first collection.</p></section>
+<section class="card"><h2>Continue a saved run</h2><p class="muted">Continue from its last saved page using the original apps and settings. The page limit above controls how many additional pages to request. Start a new collection to check recent reviews instead.</p>
+<p class="muted">A saved cursor can expire upstream. If continuing fails, the saved data remains available; inspect the error before starting a new run.</p><details><summary>Saved checkpoints</summary><div id="runs"></div></details></section>
+</main><script>
+const byId=id=>document.getElementById(id);
+const labels={ready:'Checks passed',warning:'Review source quality',needs_attention:'Needs attention',failed:'Could not finish',running:'No completion recorded'};
+let token='',initialized=false,busy=false,submitting=false,timer;
+function element(tag,text,cls){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;}
+function link(text,url){const a=element('a',text);a.href=url;return a;}
+function time(value){return new Date(value).toLocaleString();}
+function controls(){byId('start').disabled=busy||submitting||!token;byId('start').textContent=busy?'Collection in progress…':'Start collection';document.querySelectorAll('[data-resume]').forEach(b=>b.disabled=busy||submitting);}
+function show(data){
+ token=data.token;busy=data.active;
+ if(!initialized){byId('apps').replaceChildren();for(const app of data.apps){const label=element('label',undefined,'app'),input=element('input');input.type='checkbox';input.name='app';input.value=app.app_id;input.checked=true;const name=element('span',app.label);name.append(element('small',app.app_id));label.append(input,name);byId('apps').append(label);}initialized=true;}
+ byId('total').textContent=data.stored_reviews.toLocaleString();
+ if(data.message)byId('message').textContent=data.message;
+ byId('errors').textContent=data.errors.join(' ');
+ byId('history').replaceChildren();byId('empty').hidden=data.cycles.length>0;
+ for(const cycle of data.cycles){const row=element('tr');row.append(element('td',time(cycle.started_at)));const status=element('td');const statusText=cycle.status==='running'&&data.active&&cycle.started_at>=data.started_at?'Collecting…':labels[cycle.status]||cycle.status;status.append(element('span',statusText,'badge'));row.append(status,element('td',cycle.unique_reviews??'—'));
+ const notes=element('td',cycle.issues.join(' ')||'—','notes');row.append(notes);const open=element('td');if(cycle.result_url)open.append(link('View results',cycle.result_url));else open.append(link('Status report',`/results/${cycle.cycle_id}/health.json`));row.append(open);byId('history').append(row);}
+ byId('latest').replaceChildren();const latest=data.cycles.find(c=>c.result_url);if(latest)byId('latest').append(link('Browse latest saved data',latest.result_url));
+ byId('runs').replaceChildren();
+ for(const run of data.runs.filter(r=>r.can_resume)) {const card=element('div',undefined,'job');card.append(element('strong',time(run.started_at)),element('p',run.jobs.map(j=>`${j.label}: ${j.pages} saved page(s)`).join(' · ')));
+ const details=element('details');details.append(element('summary','Technical details'),element('small',run.run_id));for(const job of run.jobs)if(job.error){card.append(element('p',`${job.label} needs attention. See technical details.`));details.append(element('p',`${job.label}: ${job.error}`));}card.append(details);
+ const button=element('button','Continue this run');button.type='button';button.dataset.resume=run.run_id;button.addEventListener('click',()=>start({resume:run.run_id,pages:Number(byId('pages').value)}));card.append(button);byId('runs').append(card);}
+ if(!byId('runs').children.length)byId('runs').append(element('p','No resumable runs.','empty'));controls();
+}
+async function update(){clearTimeout(timer);try{const response=await fetch('/api/state');if(!response.ok)throw Error('Could not read collection status.');show(await response.json());}catch(error){token='';controls();byId('errors').textContent=`${error.message} Check that the local server is running; this page will retry.`;}finally{timer=setTimeout(update,busy?2000:15000);}}
+async function start(payload){submitting=true;controls();byId('errors').textContent='';try{const response=await fetch('/api/collect',{method:'POST',headers:{'Content-Type':'application/json','X-Collection-Token':token},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw Error(data.error);byId('message').textContent=data.message;await update();}catch(error){byId('errors').textContent=error.message;}finally{submitting=false;controls();}}
+byId('collect').addEventListener('submit',event=>{event.preventDefault();const apps=[...document.querySelectorAll('input[name=app]:checked')].map(e=>e.value);if(byId('extra').value.trim())apps.push(byId('extra').value.trim());start({apps,pages:Number(byId('pages').value),count:Number(byId('count').value)});});
+update();
+</script></body></html>

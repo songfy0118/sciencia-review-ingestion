@@ -135,6 +135,21 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(report["status"], "needs_attention")
         self.assertEqual(report["failed_attempts"], 1)
 
+    def test_malformed_payload_is_recorded_without_aborting_other_apps(self):
+        apps = self.args['apps'] + [{'app_id': 'com.example.broken', 'label': 'Broken'}]
+        report = run_once(**(self.args | {'apps': apps}), fetcher=lambda **r:
+                          None if r['app_id'].endswith('broken') else {'records': [record()], 'cursor': None})
+        self.assertEqual(report['unique_reviews_in_database'], 1)
+        self.assertEqual(report['failed_attempts'], 1)
+        self.assertEqual(report['status'], 'needs_attention')
+
+    def test_malformed_worker_error_is_diagnostic(self):
+        from types import SimpleNamespace
+        with patch('review_ingestion.play_pipeline.subprocess.run', return_value=SimpleNamespace(
+                returncode=0, stdout=json.dumps({'ok': False}))):
+            with self.assertRaisesRegex(SourceError, 'invalid response'):
+                fetch_page(timeout=1)
+
     def test_second_collector_cannot_take_same_database(self):
         def fetch(**_):
             with self.assertRaisesRegex(RuntimeError, "Another collector"):
