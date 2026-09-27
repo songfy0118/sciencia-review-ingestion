@@ -2,7 +2,7 @@
 
 URL: https://product-review-data.review-data-lab.workers.dev/
 
-The previous Amazon site at this address has been replaced by the Google Play preview. Amazon code and findings remain in `archive/amazon/`.
+The previous Amazon site at this address has been replaced by the Google Play preview. Amazon code and findings remain in `Version 1/archive/amazon/`.
 
 ## What a visitor can do
 
@@ -29,15 +29,15 @@ App metadata names for newly added apps may be visitor supplied. No uploads, arb
 
 ## Deploy and test
 
-Use the project's already-installed Wrangler CLI or an existing compatible Wrangler installation; no new runtime dependency was added. Configuration is `web/wrangler.jsonc`; credentials remain outside this repository.
+Run these commands from **Version 2**. Use the project's already-installed Wrangler CLI or an existing compatible Wrangler installation; no new runtime dependency was added. Configuration is `web/wrangler.jsonc`; credentials remain outside this repository.
 
 ```powershell
 node --test web/worker.test.mjs
 node --check web/public/app.js
-.venv/Scripts/python.exe web/seed.py
-node archive/amazon/site/node_modules/wrangler/bin/wrangler.js d1 execute app-review-data --remote --file web/schema.sql --config web/wrangler.jsonc
-node archive/amazon/site/node_modules/wrangler/bin/wrangler.js d1 execute app-review-data --remote --file data/deployment/seed.sql --config web/wrangler.jsonc
-node archive/amazon/site/node_modules/wrangler/bin/wrangler.js deploy --config web/wrangler.jsonc
+../.venv/Scripts/python.exe web/seed.py
+node "../Version 1/archive/amazon/site/node_modules/wrangler/bin/wrangler.js" d1 execute app-review-data --remote --file web/schema.sql --config web/wrangler.jsonc
+node "../Version 1/archive/amazon/site/node_modules/wrangler/bin/wrangler.js" d1 execute app-review-data --remote --file data/deployment/seed.sql --config web/wrangler.jsonc
+node "../Version 1/archive/amazon/site/node_modules/wrangler/bin/wrangler.js" deploy --config web/wrangler.jsonc
 ```
 
 Seed SQL is ignored by Git and uses conflict-do-nothing semantics so rerunning it cannot overwrite a newer cloud review. Initial schema setup and seeding are one-time deployment steps; ordinary releases only need testing and deployment.

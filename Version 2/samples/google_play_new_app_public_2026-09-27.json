@@ -1,0 +1,17 @@
+{
+  "checked_at": "2026-09-27T22:55:26.839Z",
+  "anonymous": true,
+  "app_tested": "org.telegram.messenger",
+  "new_app_reviews": 25,
+  "new_app_rows_match": true,
+  "existing_app": "Google Maps",
+  "existing_app_reviews": 338,
+  "apps": 10,
+  "total": 1267,
+  "tests": {
+    "google_play_python": 46,
+    "public_worker": 10,
+    "amazon_archive": 6
+  },
+  "note": "Telegram was not in the saved app list before this browser-driven test. Collection returned 25 records; a separate anonymous request retrieved the persisted reviews. This is a bounded sample, not complete coverage."
+}

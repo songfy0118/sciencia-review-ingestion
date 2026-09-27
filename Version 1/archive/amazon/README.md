@@ -2,7 +2,7 @@
 
 This was the first source-feasibility experiment. Some requests returned real reviews: the saved September 21 test extracted 13 records. Other requests for the same product returned no reviews or a sign-in page. The result was useful, but access was not reliable enough for recurring collection.
 
-Amazon development is paused. The active Google Play pipeline is described in the [main README](../../README.md). No new Amazon requests were made during this reorganization.
+Amazon development is paused. The active Google Play pipeline is described in the [Version 2 README](../../../Version%202/README.md). No new Amazon requests were made during this reorganization.
 
 ## What is preserved
 
@@ -21,14 +21,14 @@ The archive preserves the original limitations. Its code and reports do not esta
 
 ## Local checks
 
-Run from the repository root using the existing Python environment:
+Run from the **Version 1** folder using the existing Python environment:
 
 ```powershell
-.venv\Scripts\python.exe -m unittest discover -s archive/amazon/tests -v
-.venv\Scripts\python.exe -m archive.amazon.cli --help
-.venv\Scripts\python.exe -m archive.amazon.import_web --help
+..\.venv\Scripts\python.exe -m unittest discover -s archive/amazon/tests -v
+..\.venv\Scripts\python.exe -m archive.amazon.cli --help
+..\.venv\Scripts\python.exe -m archive.amazon.import_web --help
 ```
 
 The Python module prefix is now `archive.amazon`, replacing the old `review_ingestion` prefix for Amazon commands. Relative input and output paths are resolved from your working directory. Do not use the Google Play database for Amazon imports.
 
-Website checks run from `archive/amazon/site` with its existing Node dependencies: `npm test` and `npm run typecheck`. Moving the source does not redeploy or change the existing hosted Amazon demo.
+Website checks run from `archive/amazon/site` with its existing Node dependencies: `npm test` and `npm run typecheck`. The main public website now serves Version 2; this source remains available for historical review.
