@@ -6,6 +6,16 @@ Search saved app reviews, or paste a Google Play link to collect a small new sam
 
 ## Where to look
 
+Current milestone: [controlled repeated ingestion](docs/controlled-ingestion.md).
+See [September 29 results](docs/controlled-findings-2026-09-29.md): three live
+rounds, 3,000 observations, 1,003 unique stored reviews, with freshness still open.
+The [September 30 follow-up](docs/controlled-findings-2026-09-30.md) reused the
+same database about 23.73 hours later: 999 additional IDs, 2,002 unique reviews
+total. Duolingo's newest returned date moved backwards and remains a source warning.
+The database is the collection output; the website is an inspection interface.
+The experiment uses one persistent local SQLite database. It does not modify or
+measure the separate public D1 database.
+
 | Folder | Contents |
 | --- | --- |
 | [web/](web/) | Public website, online collector and database schema |

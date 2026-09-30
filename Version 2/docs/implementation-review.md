@@ -1,5 +1,10 @@
 # Implementation review — September 27, 2026
 
+Historical review: the public Google Play interface was deployed later on
+September 27, superseding the Amazon-hosting statements below. See
+[public preview](public-preview.md). The September 29 work focuses on
+[controlled repeated ingestion](controlled-ingestion.md), not interface changes.
+
 The current milestone is a small, repeated Google Play collection across several apps, with persistent relational storage and an honest source assessment. Amazon work is paused. Classification, labeling and model training are later consumers of this data, not current deliverables.
 
 ## Requirement checks

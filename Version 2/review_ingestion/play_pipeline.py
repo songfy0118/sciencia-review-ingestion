@@ -9,6 +9,7 @@ import subprocess
 import sys
 import time
 import uuid
+from contextlib import contextmanager
 from pathlib import Path
 
 from .google_play import GooglePlayApp, app_url, normalize_review, utc_now, validate_app_id
@@ -34,6 +35,18 @@ CREATE TABLE IF NOT EXISTS play_attempts (
  id INTEGER PRIMARY KEY, run_id TEXT NOT NULL, app_id TEXT NOT NULL,
  page INTEGER NOT NULL, attempted_at TEXT NOT NULL, success INTEGER NOT NULL,
  error TEXT, retryable INTEGER NOT NULL,
+ FOREIGN KEY(run_id, app_id) REFERENCES play_jobs(run_id, app_id)
+);
+CREATE TABLE IF NOT EXISTS play_page_changes (
+ run_id TEXT NOT NULL, app_id TEXT NOT NULL, page INTEGER NOT NULL,
+ changed INTEGER NOT NULL, unchanged INTEGER NOT NULL, stale INTEGER NOT NULL,
+ cross_page_duplicates INTEGER NOT NULL,
+ PRIMARY KEY(run_id, app_id, page),
+ FOREIGN KEY(run_id, app_id, page) REFERENCES play_pages(run_id, app_id, page)
+);
+CREATE TABLE IF NOT EXISTS play_storage_failures (
+ id INTEGER PRIMARY KEY, run_id TEXT NOT NULL, app_id TEXT NOT NULL,
+ page INTEGER NOT NULL, failed_at TEXT NOT NULL, error TEXT NOT NULL,
  FOREIGN KEY(run_id, app_id) REFERENCES play_jobs(run_id, app_id)
 );
 """
@@ -198,13 +211,16 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
                     status = "quality_error"
                 # Records, source snapshot, observations and next cursor commit together.
                 # A kill or database failure before commit leaves the old cursor intact.
-                with connection:
+                with page_transaction(connection, run_id, app_id, page_number):
                     upsert_app(connection, GooglePlayApp(app_id, app["label"], app["label"], "", "", url), collected_at)
+                    changes = classify_existing(connection, reviews)
                     new, repeated = upsert_reviews(connection, reviews)
                     connection.execute("INSERT INTO play_pages VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
                         (run_id, app_id, page_number, collected_at, len(payload["records"]),
                          len(reviews), duplicates, len(rejects), new, repeated,
                          json.dumps(payload["records"], ensure_ascii=False), json.dumps(rejects)))
+                    connection.execute("INSERT INTO play_page_changes VALUES(?,?,?,?,?,?,?)",
+                        (run_id, app_id, page_number, *changes, len(seen & prior_ids)))
                     connection.executemany(
                         "INSERT OR IGNORE INTO review_observations VALUES(?,?,?,?,?,?)",
                         [(run_id, app_id, r.review_id, job["pages"] * count + i,
@@ -213,7 +229,9 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
                         (cursor, page_number, status,
                          "Rejected records require inspection" if rejects else "Pagination made no progress" if stalled else None,
                          run_id, app_id))
-                if status != "paused":
+                committed_status = connection.execute(
+                    "SELECT status FROM play_jobs WHERE run_id=? AND app_id=?", (run_id, app_id)).fetchone()[0]
+                if committed_status != "paused":
                     break
         report = summarize(connection, run_id, config)
         with connection:
@@ -224,6 +242,38 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
         connection.close()
 
 
+def classify_existing(connection, reviews):
+    changed = unchanged = stale = 0
+    for review in reviews:
+        stored = connection.execute("SELECT * FROM reviews WHERE app_id=? AND review_id=?",
+                                    (review.app_id, review.review_id)).fetchone()
+        if stored is None:
+            continue
+        if review.collected_at < stored["last_collected_at"]:
+            stale += 1
+        elif any(stored[key] != value for key, value in review.to_dict().items() if key != "collected_at"):
+            changed += 1
+        else:
+            unchanged += 1
+    return changed, unchanged, stale
+
+
+@contextmanager
+def page_transaction(connection, run_id, app_id, page):
+    try:
+        with connection:
+            yield
+    except sqlite3.Error as exc:
+        # The page is rolled back before recording the failure in a new transaction.
+        # If even this write fails, propagate the error rather than claim recovery.
+        with connection:
+            connection.execute(
+                "INSERT INTO play_storage_failures(run_id,app_id,page,failed_at,error) VALUES(?,?,?,?,?)",
+                (run_id, app_id, page, utc_now(), str(exc)))
+            connection.execute("UPDATE play_jobs SET status='failed', error=? WHERE run_id=? AND app_id=?",
+                               (f"Database page commit failed: {exc}", run_id, app_id))
+
+
 def summarize(connection: sqlite3.Connection, run_id: str, config: dict) -> dict:
     apps = []
     for job in connection.execute("SELECT * FROM play_jobs WHERE run_id=? ORDER BY app_id", (run_id,)):
@@ -232,9 +282,18 @@ def summarize(connection: sqlite3.Connection, run_id: str, config: dict) -> dict
             coalesce(sum(rejected),0) rejected_records, coalesce(sum(new_count),0) new_records,
             coalesce(sum(repeated_count),0) repeated_records FROM play_pages WHERE run_id=? AND app_id=?""",
             (run_id, job["app_id"])).fetchone())
+        changes = dict(connection.execute("""SELECT count(*) classified_pages,
+            coalesce(sum(changed),0) changed_records, coalesce(sum(unchanged),0) unchanged_records,
+            coalesce(sum(stale),0) stale_records,
+            coalesce(sum(cross_page_duplicates),0) cross_page_duplicates
+            FROM play_page_changes WHERE run_id=? AND app_id=?""", (run_id, job["app_id"])).fetchone())
+        changes["unclassified_pages"] = job["pages"] - changes["classified_pages"]
+        failures = [dict(row) for row in connection.execute(
+            "SELECT page,failed_at,error FROM play_storage_failures WHERE run_id=? AND app_id=? ORDER BY id",
+            (run_id, job["app_id"]))]
         apps.append({"app_id": job["app_id"], "label": job["label"], "status": job["status"],
                      "pages": job["pages"], "can_resume": job["status"] in ("paused", "failed", "pending"),
-                     "error": job["error"], **counts})
+                     "error": job["error"], "storage_failures": failures, **counts, **changes})
     integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
     fk = connection.execute("PRAGMA foreign_key_check").fetchall()
     clean = all(a["status"] in ("paused", "source_end") and a["accepted_records"] > 0 and a["rejected_records"] == 0 for a in apps)

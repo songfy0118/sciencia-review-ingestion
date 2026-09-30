@@ -1,0 +1,125 @@
+{
+  "run_id": "d212805c-fa96-4540-b2b3-d415098bdb19",
+  "generated_at": "2026-09-30T21:26:25.771367Z",
+  "apps": [
+    {
+      "app_id": "com.duolingo",
+      "label": "Duolingo",
+      "status": "paused",
+      "pages": 2,
+      "unique_reviews_in_run": 200,
+      "sample_collected_at": "2026-09-30T21:25:22.541048Z",
+      "newest_returned_review": "2026-09-22T04:11:31Z",
+      "newest_review_age_days_at_collection": 8.72,
+      "comparison": {
+        "previous_run_id": "da812407-ce9e-4bdd-8aea-daf9e8e5645d",
+        "hours_between_samples": 23.73,
+        "shared_ids_in_window": 1,
+        "previous_newest_returned_review": "2026-09-22T04:53:03Z",
+        "newest_timestamp_change_seconds": -2492.0,
+        "new_ids_in_window": 199,
+        "ids_no_longer_in_window": 199,
+        "changed_text_rating_or_reply": 0,
+        "id_jaccard": 0.0025
+      },
+      "warnings": [
+        "Newest returned review was over seven days old at collection",
+        "Newest returned review moved backwards despite matching NEWEST settings; investigate source ordering"
+      ]
+    },
+    {
+      "app_id": "com.google.android.apps.maps",
+      "label": "Google Maps",
+      "status": "paused",
+      "pages": 2,
+      "unique_reviews_in_run": 200,
+      "sample_collected_at": "2026-09-30T21:25:27.862746Z",
+      "newest_returned_review": "2026-09-29T21:24:13Z",
+      "newest_review_age_days_at_collection": 1.0,
+      "comparison": {
+        "previous_run_id": "da812407-ce9e-4bdd-8aea-daf9e8e5645d",
+        "hours_between_samples": 23.73,
+        "shared_ids_in_window": 0,
+        "previous_newest_returned_review": "2026-09-28T21:30:45Z",
+        "newest_timestamp_change_seconds": 86008.0,
+        "new_ids_in_window": 200,
+        "ids_no_longer_in_window": 200,
+        "changed_text_rating_or_reply": 0,
+        "id_jaccard": 0.0
+      },
+      "warnings": []
+    },
+    {
+      "app_id": "com.netflix.mediaclient",
+      "label": "Netflix",
+      "status": "paused",
+      "pages": 2,
+      "unique_reviews_in_run": 200,
+      "sample_collected_at": "2026-09-30T21:25:39.283562Z",
+      "newest_returned_review": "2026-09-29T21:15:50Z",
+      "newest_review_age_days_at_collection": 1.01,
+      "comparison": {
+        "previous_run_id": "da812407-ce9e-4bdd-8aea-daf9e8e5645d",
+        "hours_between_samples": 23.73,
+        "shared_ids_in_window": 0,
+        "previous_newest_returned_review": "2026-09-28T21:34:42Z",
+        "newest_timestamp_change_seconds": 85268.0,
+        "new_ids_in_window": 200,
+        "ids_no_longer_in_window": 200,
+        "changed_text_rating_or_reply": 0,
+        "id_jaccard": 0.0
+      },
+      "warnings": []
+    },
+    {
+      "app_id": "com.spotify.music",
+      "label": "Spotify",
+      "status": "paused",
+      "pages": 2,
+      "unique_reviews_in_run": 200,
+      "sample_collected_at": "2026-09-30T21:25:15.923229Z",
+      "newest_returned_review": "2026-09-29T21:20:31Z",
+      "newest_review_age_days_at_collection": 1.0,
+      "comparison": {
+        "previous_run_id": "da812407-ce9e-4bdd-8aea-daf9e8e5645d",
+        "hours_between_samples": 23.73,
+        "shared_ids_in_window": 0,
+        "previous_newest_returned_review": "2026-09-28T21:38:05Z",
+        "newest_timestamp_change_seconds": 85346.0,
+        "new_ids_in_window": 200,
+        "ids_no_longer_in_window": 200,
+        "changed_text_rating_or_reply": 0,
+        "id_jaccard": 0.0
+      },
+      "warnings": []
+    },
+    {
+      "app_id": "com.whatsapp",
+      "label": "WhatsApp",
+      "status": "paused",
+      "pages": 2,
+      "unique_reviews_in_run": 200,
+      "sample_collected_at": "2026-09-30T21:25:34.173824Z",
+      "newest_returned_review": "2026-09-29T21:25:28Z",
+      "newest_review_age_days_at_collection": 1.0,
+      "comparison": {
+        "previous_run_id": "da812407-ce9e-4bdd-8aea-daf9e8e5645d",
+        "hours_between_samples": 23.73,
+        "shared_ids_in_window": 0,
+        "previous_newest_returned_review": "2026-09-28T21:40:35Z",
+        "newest_timestamp_change_seconds": 85493.0,
+        "new_ids_in_window": 200,
+        "ids_no_longer_in_window": 200,
+        "changed_text_rating_or_reply": 0,
+        "id_jaccard": 0.0
+      },
+      "warnings": []
+    }
+  ],
+  "recommendation": "investigate_source_quality",
+  "limitations": [
+    "A changed or unchanged bounded window does not prove historical completeness.",
+    "IDs leaving a window are not evidence of deleted reviews.",
+    "Seven days is a diagnostic threshold, not a promised freshness requirement."
+  ]
+}

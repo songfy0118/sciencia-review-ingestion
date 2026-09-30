@@ -3,12 +3,15 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sqlite3
 import time
 from pathlib import Path
 
 from .google_play import validate_app_id
 from .play_pipeline import run_once
 from .storage import write_json
+from .audit_play import audit
+from .evaluate_play import evaluate
 
 
 def load_apps(path: Path) -> list[dict[str, str]]:
@@ -46,6 +49,11 @@ def main() -> int:
         parser.error("runs must be 1..20; interval must be nonnegative")
     if args.resume and args.runs != 1:
         parser.error("Use --runs 1 when resuming")
+    paths = [args.input, args.db, args.report]
+    for index, path in enumerate(paths):
+        for other in paths[index + 1:]:
+            if path.resolve() == other.resolve() or (path.exists() and other.exists() and path.samefile(other)):
+                parser.error("Input, database and report must be distinct files")
     apps = load_apps(args.input)
     reports = []
     for index in range(args.runs):
@@ -53,12 +61,25 @@ def main() -> int:
                           lang=args.lang, country=args.country, delay=args.delay,
                           timeout=args.timeout, retries=args.retries, resume=args.resume)
         reports.append(report)
+        report["verification_status"] = "pending"
+        write_json(args.report, {"schema_version": 2, "runs": reports})
+        errors = {}
+        for name, check in (("evaluation", lambda: evaluate(args.db, report["run_id"])),
+                            ("storage_audit", lambda: audit(args.db))):
+            try:
+                report[name] = check()
+            except (ValueError, TypeError, sqlite3.Error, OSError) as exc:
+                errors[name] = f"{type(exc).__name__}: {exc}"
+        report["verification_errors"] = errors
+        report["verification_status"] = "failed" if errors or not report.get(
+            "storage_audit", {}).get("storage_checks_passed") else "passed"
         # Refresh after each run; completed runs survive later interruption.
         write_json(args.report, {"schema_version": 2, "runs": reports})
         if index + 1 < args.runs:
             time.sleep(args.interval)
     print(json.dumps({"schema_version": 2, "runs": reports}, indent=2))
-    return 0 if all(r["status"] == "bounded_success" for r in reports) else 1
+    return 0 if all(r["status"] == "bounded_success" and r["verification_status"] == "passed"
+                    for r in reports) else 1
 
 
 if __name__ == "__main__":

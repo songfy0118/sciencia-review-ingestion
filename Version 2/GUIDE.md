@@ -1,5 +1,9 @@
 # Version 2 — Detailed guide
 
+For the current milestone, start with [controlled repeated ingestion](docs/controlled-ingestion.md).
+It uses a fixed five-App configuration and reports new, changed, unchanged and
+duplicate observations plus source evaluation and storage checks after every round.
+
 Collect a defined list of Google Play apps, save review records into one persistent SQLite database, and resume from the last committed page. This is a bounded research prototype. Amazon work is paused; its code and findings remain as the earlier source-feasibility experiment.
 
 Run the commands below from the **Version 2** directory. The existing virtual environment is one level above it.

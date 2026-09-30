@@ -65,10 +65,63 @@ class PipelineTests(unittest.TestCase):
         with closing(sqlite3.connect(self.db)) as c:
             c.execute("CREATE TRIGGER fail_page BEFORE INSERT ON play_pages BEGIN SELECT RAISE(ABORT,'disk failure simulation'); END")
             c.commit()
-        with self.assertRaises(sqlite3.IntegrityError):
-            self.run_page([record("r2")], "cursor-two", resume=first["run_id"])
+        failed = self.run_page([record("r2")], "cursor-two", resume=first["run_id"])
+        self.assertEqual(failed["status"], "needs_attention")
+        self.assertIn("Database page commit failed", failed["apps"][0]["error"])
         self.assertEqual(self.query("select count(*) from reviews"), [(1,)])
         self.assertEqual(self.query("select cursor,pages from play_jobs"), [("cursor-one", 1)])
+        self.assertEqual(self.query("select count(*) from play_page_changes"), [(1,)])
+
+    def test_repeated_collection_distinguishes_updates_and_duplicates(self):
+        self.run_page([record("one"), record("two")])
+        second = self.run_page([record("one", thumbsUpCount=7), record("two"), record("three"), record("three")], "next")
+        app = second["apps"][0]
+        self.assertEqual((app["new_records"], app["changed_records"], app["unchanged_records"], app["duplicates"]), (1, 1, 1, 1))
+        resumed = self.run_page([record("three"), record("four")], resume=second["run_id"])
+        self.assertEqual(resumed["apps"][0]["cross_page_duplicates"], 1)
+        self.assertEqual(resumed["unique_reviews_in_database"], 4)
+
+    def test_database_failure_allows_other_apps_and_resume(self):
+        first = self.run_page([record()], "next")
+        with closing(sqlite3.connect(self.db)) as c:
+            c.execute("CREATE TRIGGER fail_page BEFORE INSERT ON play_pages WHEN NEW.app_id='com.example.app' BEGIN SELECT RAISE(ABORT,'test'); END")
+            c.commit()
+        apps = self.args["apps"] + [{"app_id": "com.example.other", "label": "Other"}]
+        failed = self.run_page([record("new")], apps=apps)
+        self.assertEqual(failed["status"], "needs_attention")
+        self.assertEqual(failed["unique_reviews_in_database"], 2)
+        with closing(sqlite3.connect(self.db)) as c:
+            c.execute("DROP TRIGGER fail_page")
+            c.commit()
+        recovered = self.run_page([record("new")], resume=first["run_id"])
+        self.assertEqual(recovered["status"], "bounded_success")
+
+    def test_storage_failure_history_survives_successful_resume(self):
+        first = self.run_page([record()], "next")
+        with closing(sqlite3.connect(self.db)) as c:
+            c.execute("CREATE TRIGGER fail_page BEFORE INSERT ON play_pages BEGIN SELECT RAISE(ABORT,'disk error'); END")
+            c.commit()
+        failed = self.run_page([record("two")], resume=first["run_id"])
+        self.assertEqual(len(failed["apps"][0]["storage_failures"]), 1)
+        with closing(sqlite3.connect(self.db)) as c:
+            c.execute("DROP TRIGGER fail_page")
+            c.commit()
+        recovered = self.run_page([record("two")], resume=first["run_id"])
+        self.assertEqual(recovered["status"], "bounded_success")
+        self.assertIsNone(recovered["apps"][0]["error"])
+        self.assertEqual(recovered["apps"][0]["storage_failures"], failed["apps"][0]["storage_failures"])
+        self.assertEqual(recovered["failed_attempts"], 0)
+
+    def test_failure_logging_error_propagates_with_checkpoint_intact(self):
+        first = self.run_page([record()], "next")
+        with closing(sqlite3.connect(self.db)) as c:
+            c.execute("CREATE TRIGGER fail_page BEFORE INSERT ON play_pages BEGIN SELECT RAISE(ABORT,'page error'); END")
+            c.execute("CREATE TRIGGER fail_log BEFORE INSERT ON play_storage_failures BEGIN SELECT RAISE(ABORT,'log error'); END")
+            c.commit()
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "log error"):
+            self.run_page([record("two")], resume=first["run_id"])
+        self.assertEqual(self.query("SELECT count(*) FROM reviews"), [(1,)])
+        self.assertEqual(self.query("SELECT cursor,pages FROM play_jobs"), [("next", 1)])
 
     def test_empty_page_never_looks_like_success(self):
         report = self.run_page([])

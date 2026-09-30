@@ -63,6 +63,31 @@ class EvaluationTests(unittest.TestCase):
         current = self.collect([record(at=future)])
         self.assertTrue(any('future' in w for w in evaluate(self.db, current)['apps'][0]['warnings']))
 
+    def test_conflicting_duplicate_uses_same_record_as_storage(self):
+        self.collect([record()], hours_ago=48)
+        current = self.collect([record(), record(content='Duplicate differs')])
+        item = evaluate(self.db, current)['apps'][0]
+        self.assertEqual(item['comparison']['changed_text_rating_or_reply'], 0)
+
+    def test_new_ids_do_not_hide_backwards_newest_timestamp(self):
+        self.collect([record('previous', at='2026-09-28T10:00:00Z')], hours_ago=24)
+        current = self.collect([record('different', at='2026-09-27T10:00:00Z')])
+        item = evaluate(self.db, current)['apps'][0]
+        self.assertEqual(item['comparison']['new_ids_in_window'], 1)
+        self.assertEqual(item['comparison']['shared_ids_in_window'], 0)
+        self.assertEqual(item['comparison']['newest_timestamp_change_seconds'], -86400)
+        self.assertTrue(any('backwards' in warning for warning in item['warnings']))
+
+    def test_failed_current_window_is_not_used_for_overlap_comparison(self):
+        self.collect([record()], hours_ago=24)
+        current = self.collect([record()])
+        with closing(sqlite3.connect(self.db)) as connection:
+            connection.execute("UPDATE play_jobs SET status='failed' WHERE run_id=?", (current,))
+            connection.commit()
+        item = evaluate(self.db, current)['apps'][0]
+        self.assertIsNone(item['comparison'])
+        self.assertTrue(any('incomplete or failed' in warning for warning in item['warnings']))
+
 
 if __name__ == '__main__':
     unittest.main()

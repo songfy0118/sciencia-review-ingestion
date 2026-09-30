@@ -1,0 +1,7 @@
+[
+  {"app_id": "com.spotify.music", "label": "Spotify"},
+  {"app_id": "com.duolingo", "label": "Duolingo"},
+  {"app_id": "com.google.android.apps.maps", "label": "Google Maps"},
+  {"app_id": "com.whatsapp", "label": "WhatsApp"},
+  {"app_id": "com.netflix.mediaclient", "label": "Netflix"}
+]
