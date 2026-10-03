@@ -87,20 +87,26 @@ def audit(db: Path) -> dict:
             age = round((now - newest).total_seconds() / 86400, 2)
             item["newest_review_age_days"] = age
             item["freshness_warning"] = "Newest returned review is over seven days old; investigate source freshness" if age > 7 else None
-            candidates = c.execute("""SELECT j.run_id,j.pages,r.lang,r.country,r.requested_per_app
+            candidates = c.execute("""SELECT j.run_id,j.pages,r.lang,r.country,r.requested_per_app,r.report_json
                 FROM play_jobs j JOIN collection_runs r USING(run_id)
                 WHERE j.app_id=? AND r.status='bounded_success'
                 ORDER BY r.started_at DESC""", (row["app_id"],)).fetchall()
             comparable = []
             if candidates:
                 latest = candidates[0]
-                comparable = [r for r in candidates if tuple(r)[1:] == tuple(latest)[1:]][:2]
+                latest_config = json.loads(latest['report_json']).get('config', {})
+                settings = ('sort', 'adapter', 'package')
+                if all(latest_config.get(key) for key in settings):
+                    comparable = [r for r in candidates if tuple(r)[1:5] == tuple(latest)[1:5] and
+                        all(json.loads(r['report_json']).get('config', {}).get(key) == latest_config[key]
+                            for key in settings)][:2]
             if len(comparable) == 2:
                 sets = [{r[0] for r in c.execute("SELECT review_id FROM review_observations WHERE run_id=? AND app_id=?",
                                                (run[0], row["app_id"]))} for run in comparable]
                 item["comparable_run_ids"] = [r[0] for r in comparable]
                 item["comparison_parameters"] = dict(pages=latest["pages"], lang=latest["lang"],
-                    country=latest["country"], count=latest["requested_per_app"], sort="NEWEST")
+                    country=latest["country"], count=latest["requested_per_app"],
+                    **{key: latest_config[key] for key in settings})
                 item["review_id_jaccard"] = round(len(sets[0] & sets[1]) / len(sets[0] | sets[1]), 4) if sets[0] | sets[1] else None
             apps.append(item)
         integrity = c.execute("PRAGMA integrity_check").fetchone()[0]
@@ -120,6 +126,9 @@ def main():
     parser.add_argument("--db", required=True, type=Path)
     parser.add_argument("--report", required=True, type=Path)
     args = parser.parse_args()
+    if args.db.resolve() == args.report.resolve() or (
+            args.db.exists() and args.report.exists() and args.db.samefile(args.report)):
+        parser.error('Database and report must be distinct files')
     report = audit(args.db)
     write_json(args.report, report)
     print(json.dumps(report, indent=2))

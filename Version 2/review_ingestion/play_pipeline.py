@@ -56,10 +56,13 @@ CREATE TABLE IF NOT EXISTS play_page_transport (
  PRIMARY KEY(run_id, app_id, page),
  FOREIGN KEY(run_id, app_id, page) REFERENCES play_pages(run_id, app_id, page)
 );
-CREATE VIEW IF NOT EXISTS latest_play_source_quality AS
+BEGIN IMMEDIATE;
+DROP VIEW IF EXISTS latest_play_source_quality;
+CREATE VIEW latest_play_source_quality AS
  WITH ranked AS (
   SELECT j.run_id,j.app_id,r.status collection_status,j.status job_status,
-   ROW_NUMBER() OVER(PARTITION BY j.app_id ORDER BY r.started_at DESC,r.rowid DESC) rank
+   ROW_NUMBER() OVER(PARTITION BY j.app_id ORDER BY
+    COALESCE(json_extract(r.report_json,'$.generated_at'),r.started_at) DESC,r.rowid DESC) rank
   FROM play_jobs j JOIN collection_runs r USING(run_id)
  )
  SELECT q.run_id,q.app_id,q.collection_status,q.job_status,
@@ -67,6 +70,7 @@ CREATE VIEW IF NOT EXISTS latest_play_source_quality AS
        ELSE COALESCE(a.status,'unassessed') END quality_status,a.report_json
  FROM ranked q LEFT JOIN play_source_assessments a USING(run_id,app_id)
  WHERE q.rank=1;
+COMMIT;
 """
 
 
@@ -185,7 +189,8 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
         # stdout is reserved for JSON reports; this ID remains available after a crash.
         print(f"Run {run_id}: checkpoint database {db_path}", file=sys.stderr, flush=True)
         with connection:
-            connection.execute("UPDATE collection_runs SET status='running', completed_at='' WHERE run_id=?", (run_id,))
+            connection.execute("""UPDATE collection_runs SET status='running', completed_at='',
+                report_json=json_set(report_json,'$.generated_at',?) WHERE run_id=?""", (utc_now(), run_id))
             connection.execute('DELETE FROM play_source_assessments WHERE run_id=?', (run_id,))
         for app in apps:
             app_id = app["app_id"]

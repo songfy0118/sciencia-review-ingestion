@@ -176,6 +176,31 @@ class PipelineTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'changed during verification'):
             persist_assessments(self.db, first)
 
+    def test_resuming_old_run_becomes_latest_quality_activity(self):
+        old = self.run_page([record()], 'next')
+        new = self.run_page([record('two')])
+        self.assertEqual(self.query('SELECT run_id FROM latest_play_source_quality'), [(new['run_id'],)])
+        def fetch(**_):
+            self.assertEqual(self.query('SELECT run_id,quality_status FROM latest_play_source_quality'),
+                             [(old['run_id'], 'unassessed')])
+            return {'records': [record('three')], 'cursor': None}
+        resumed = run_once(**self.args, resume=old['run_id'], fetcher=fetch)
+        self.assertEqual(self.query('SELECT run_id FROM latest_play_source_quality'), [(resumed['run_id'],)])
+
+    def test_audit_comparison_rejects_different_adapter_settings(self):
+        from review_ingestion.audit_play import audit
+        prior = self.run_page([record()])
+        self.run_page([record()])
+        with closing(sqlite3.connect(self.db)) as c:
+            report = json.loads(c.execute('SELECT report_json FROM collection_runs WHERE run_id=?',
+                                         (prior['run_id'],)).fetchone()[0])
+            report['config']['sort'] = 'MOST_RELEVANT'
+            c.execute('UPDATE collection_runs SET report_json=? WHERE run_id=?',
+                      (json.dumps(report), prior['run_id']))
+            c.commit()
+        item = audit(self.db)['apps'][0]
+        self.assertNotIn('comparable_run_ids', item)
+
     def test_transport_is_atomic_with_page(self):
         metadata = {'request_sort': 2, 'http_date': 'Fri, 02 Oct 2026 04:00:00 GMT',
                     'response_at_utc': '2026-10-02T04:00:02Z', 'age_header': None}

@@ -49,6 +49,11 @@ For downstream quality gating, query `latest_play_source_quality`. A resumed run
 invalidates its previous assessment before fetching. `unassessed` and
 `needs_attention` are not passing results. Verification uses consistent read
 transactions; publishing assessments rejects a run changed during verification.
+Latest means the most recent collector activity, including resume/completion,
+not the most recent reassessment. This prevents an old run resumed later from
+being hidden behind a newer run's previous quality result. Collector activity
+is represented by `collection_runs.report_json.generated_at`, falling back to
+`started_at` for historical runs without that field.
 Historical pages without transport rows remain explicitly unrecorded, not
 retroactively verified. `collection_runs.report_json` retains the collector
 summary; post-collection quality evidence is in `play_source_assessments`.

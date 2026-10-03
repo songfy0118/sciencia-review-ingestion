@@ -19,7 +19,7 @@ John's own review/acceptance has not yet been obtained.
 
 ## Final engineering checks
 
-The Python test suite has 79 tests. The new five-App acceptance fixture uses two
+The Python test suite has 82 tests. The new five-App acceptance fixture uses two
 pages of 100 per App over three rounds: 1,000 new IDs, then five edits plus 995
 unchanged observations, then 1,000 unchanged observations. Stored unique count
 stays 1,000. A fourth fixture run fails one second-page source request; resume
@@ -44,6 +44,14 @@ Resolved in this pass:
   page numbering instead of trusting counters that merely add up.
 - Failed runs cannot be comparison inputs or catch-up baselines. Missing App
   evaluation and failed storage audits cannot produce passing source quality.
+- Latest quality follows the collector's most recent start/resume/completion
+  activity, not only the original start time. Resuming an older run therefore
+  cannot remain hidden behind a newer run's previous assessment. Reassessment
+  timestamps do not change this ordering.
+- The standalone audit rejects output paths referring to its input database,
+  including hard-link aliases, before checking or writing anything.
+- Audit window comparisons also require matching sort, adapter and pinned package;
+  otherwise they omit overlap metrics rather than labeling unlike samples comparable.
 
 The existing real database was re-audited after these changes: integrity/foreign
 keys passed, zero snapshot mismatches and zero accounting/checkpoint issues.
