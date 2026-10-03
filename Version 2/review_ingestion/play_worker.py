@@ -10,10 +10,25 @@ import json
 import ssl
 import sys
 from importlib.metadata import version
+from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from .google_play import datetime_text
+
+
+def source_timestamp(item, path):
+    value = item
+    try:
+        for index in path:
+            value = value[index]
+    except (IndexError, TypeError):
+        return None
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError("Invalid source timestamp")
+    return datetime_text(datetime.fromtimestamp(value, timezone.utc))
 
 
 def validate_response(body: str, pattern) -> None:
@@ -41,6 +56,7 @@ def fetch(request: dict) -> dict:
     finally:
         ssl._create_default_https_context = original_context
     context = ssl.create_default_context()
+    transport = {}
 
     def post(url, data, headers):
         if isinstance(data, str):
@@ -48,6 +64,10 @@ def fetch(request: dict) -> dict:
         with urlopen(Request(url, data=data, headers=headers),
                      timeout=request["timeout"], context=context) as response:
             body = response.read().decode("utf-8")
+            transport.update(http_date=response.headers.get("Date"),
+                             age_header=response.headers.get("Age"),
+                             request_sort=module.Sort.NEWEST.value,
+                             response_at_utc=datetime_text(datetime.now(timezone.utc)))
         if "com.google.play.gateway.proto.PlayGatewayError" in body:
             raise RuntimeError("Google Play gateway rejected this request")
         # _fetch_review_items() also swallows token parsing errors, converting
@@ -69,10 +89,10 @@ def fetch(request: dict) -> dict:
     for item in items:
         record = {key: spec.extract_content(item)
                   for key, spec in module.ElementSpecs.Review.items()}
-        for field in ("at", "repliedAt"):
-            record[field] = datetime_text(record[field])
+        record["at"] = source_timestamp(item, [5, 0])
+        record["repliedAt"] = source_timestamp(item, [7, 2, 0])
         records.append(record)
-    return {"records": records, "cursor": token or None}
+    return {"records": records, "cursor": token or None, "transport": transport}
 
 
 def main() -> None:

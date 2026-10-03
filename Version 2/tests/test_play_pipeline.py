@@ -128,6 +128,38 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(report["status"], "needs_attention")
         self.assertEqual(report["apps"][0]["pages"], 0)
 
+    def test_catchup_stops_when_previous_window_is_observed(self):
+        baseline = self.run_page([record('old')])
+        calls = []
+        def fetch(**request):
+            calls.append(request['cursor'])
+            return {'records': [record('new' if len(calls) == 1 else 'old')], 'cursor': 'next'}
+        result = run_once(**(self.args | {'pages': 5}), overlap_run=baseline['run_id'], fetcher=fetch)
+        self.assertEqual(calls, [None, 'next'])
+        self.assertEqual(result['apps'][0]['overlap']['status'], 'boundary_observed')
+        self.assertFalse(result['apps'][0]['overlap']['complete_coverage'])
+        self.assertEqual(result['unique_reviews_in_database'], 2)
+        self.run_page([record('unused')], resume=result['run_id'], overlap_run=baseline['run_id'])
+        self.assertEqual(self.query('SELECT count(*) FROM reviews'), [(2,)])
+
+    def test_catchup_budget_exhaustion_flags_gap_risk(self):
+        baseline = self.run_page([record('old')])
+        result = self.run_page([record('different')], 'cursor', overlap_run=baseline['run_id'])
+        self.assertTrue(result['apps'][0]['overlap']['gap_risk'])
+        self.assertEqual(result['apps'][0]['overlap']['shared_ids'], 0)
+
+    def test_catchup_baseline_locale_mismatch_is_rejected(self):
+        baseline = self.run_page([record('old')])
+        with self.assertRaisesRegex(ValueError, 'settings differ'):
+            self.run_page([record()], overlap_run=baseline['run_id'], country='gb')
+
+    def test_backwards_date_is_detected_even_with_different_page_counts(self):
+        baseline = self.run_page([record('old', at='2026-09-28T10:00:00Z')], 'next')
+        self.run_page([record('older', at='2026-09-27T10:00:00Z')], resume=baseline['run_id'])
+        current = self.run_page([record('old', at='2026-09-26T10:00:00Z')], overlap_run=baseline['run_id'])
+        self.assertEqual(current['apps'][0]['overlap']['newest_timestamp_change_seconds'], -172800)
+        self.assertTrue(current['apps'][0]['overlap']['warnings'])
+
     def test_rejected_record_has_reason_and_blocks_further_pages(self):
         report = self.run_page([record(), record("bad", score=9), record()], "cursor")
         app = report["apps"][0]

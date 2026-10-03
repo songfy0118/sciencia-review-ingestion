@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 from review_ingestion.google_play_cli import main
 from review_ingestion.play_pipeline import run_once
+from review_ingestion.google_play import utc_now
 
 
 class ControlledCliTests(unittest.TestCase):
@@ -40,7 +41,7 @@ class ControlledCliTests(unittest.TestCase):
 
             def collect(**kwargs):
                 return run_once(**kwargs, fetcher=lambda **_: dict(records=[dict(
-                    reviewId='one', content='Good', score=4, at='2026-09-28T00:00:00Z')], cursor=None))
+                    reviewId='one', content='Good', score=4, at=utc_now())], cursor=None))
 
             argv = ['collect', '--input', str(config), '--db', str(database),
                     '--report', str(destination), '--pages', '1', '--delay', '0']
@@ -72,12 +73,19 @@ class ControlledCliTests(unittest.TestCase):
         self.assertEqual(report['verification_status'], 'pending')
         self.assertEqual(report['unique_reviews_in_database'], 1)
 
+    def test_stale_source_returns_nonzero_even_when_storage_passes(self):
+        report = self.invoke_with_check_failure('evaluate', lambda *args: {'apps': [
+            {'app_id': 'com.example.app', 'warnings': ['stale source']} ]})
+        self.assertEqual(report['verification_status'], 'passed')
+        self.assertEqual(report['source_quality_status'], 'needs_attention')
+
     def test_three_rounds_report_real_database_changes(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
             config = root / 'apps.json'
             config.write_text(json.dumps([dict(app_id='com.example.app', label='Example')]))
             report = root / 'report.json'
+            review_at = utc_now()
             rounds = iter([
                 [('one', 'original'), ('two', 'same')],
                 [('one', 'edited'), ('two', 'same'), ('three', 'new')],
@@ -85,7 +93,7 @@ class ControlledCliTests(unittest.TestCase):
             ])
 
             def collect(**kwargs):
-                records = [dict(reviewId=key, content=text, score=4, at='2026-09-28T00:00:00Z')
+                records = [dict(reviewId=key, content=text, score=4, at=review_at)
                            for key, text in next(rounds)]
                 return run_once(**kwargs, fetcher=lambda **_: dict(records=records, cursor=None))
 
@@ -100,6 +108,23 @@ class ControlledCliTests(unittest.TestCase):
             self.assertEqual(runs[1]['apps'][0]['changed_records'], 1)
             self.assertEqual(runs[2]['apps'][0]['unchanged_records'], 3)
             self.assertEqual(runs[2]['evaluation']['apps'][0]['comparison']['id_jaccard'], 1)
+            with contextlib.closing(sqlite3.connect(root / 'db.sqlite3')) as connection:
+                self.assertEqual(connection.execute('SELECT count(*) FROM play_source_assessments').fetchone()[0], 3)
+
+    def test_failed_evaluation_is_visible_in_database_assessment(self):
+        from review_ingestion.google_play_cli import persist_assessments
+        with tempfile.TemporaryDirectory() as folder:
+            db = Path(folder) / 'reviews.sqlite3'
+            report = run_once(db_path=db, apps=[dict(app_id='com.example.app', label='Example')],
+                pages=1, delay=0, fetcher=lambda **_: dict(records=[dict(
+                    reviewId='one', content='Good', score=4, at=utc_now())], cursor=None))
+            report['verification_status'] = 'failed'
+            report['verification_errors'] = {'evaluation': 'simulated error'}
+            persist_assessments(db, report)
+            with contextlib.closing(sqlite3.connect(db)) as connection:
+                status, evidence = connection.execute('SELECT status,report_json FROM play_source_assessments').fetchone()
+            self.assertEqual(status, 'needs_attention')
+            self.assertEqual(json.loads(evidence)['verification_errors']['evaluation'], 'simulated error')
 
 
 if __name__ == '__main__':

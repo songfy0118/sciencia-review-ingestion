@@ -2,7 +2,7 @@ import json
 import re
 import unittest
 
-from review_ingestion.play_worker import validate_response
+from review_ingestion.play_worker import validate_response, source_timestamp
 
 
 PATTERN = re.compile(r"\)]}'\n\n([\s\S]+)")
@@ -13,6 +13,12 @@ def response(payload):
 
 
 class WorkerResponseTests(unittest.TestCase):
+    def test_source_epoch_is_converted_directly_to_utc(self):
+        self.assertEqual(source_timestamp([1700000000], [0]), '2023-11-14T22:13:20Z')
+        self.assertIsNone(source_timestamp([], [7, 2, 0]))
+        with self.assertRaisesRegex(ValueError, 'Invalid source timestamp'):
+            source_timestamp([True], [0])
+
     def test_observed_continuation_and_explicit_null_token_are_valid(self):
         for token in ('next-page', None):
             validate_response(response([[['review']], [None, token], []]), PATTERN)

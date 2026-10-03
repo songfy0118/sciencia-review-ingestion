@@ -3,6 +3,7 @@ import argparse
 import json
 import time
 from pathlib import Path
+from datetime import datetime
 
 from .google_play import app_url, normalize_review, utc_now, validate_app_id
 from .play_pipeline import fetch_page, SourceError
@@ -26,9 +27,12 @@ def probe(app_id, *, countries=('us', 'gb'), count=50, fetcher=fetch_page, delay
                        for raw in payload['records']]
             ids = {r.review_id for r in records}
             newest = max((r.review_at for r in records), default=None)
+            dates = [datetime.fromisoformat(r.review_at.replace('Z', '+00:00')) for r in records]
             results.append({'country_requested': country, 'lang_requested': 'en', 'collected_at': collected_at,
                             'status': 'received' if records else 'empty', 'records': len(records), 'unique_ids': len(ids),
                             'newest_returned_review': newest,
+                            'out_of_order_adjacent_pairs': sum(b > a for a, b in zip(dates, dates[1:])),
+                            'transport': payload.get('transport', {}),
                             'same_ids_as_first_country': ids == baseline if baseline is not None else None})
             if baseline is None:
                 baseline = ids

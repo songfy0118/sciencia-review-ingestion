@@ -7,7 +7,9 @@ import sqlite3
 import time
 from pathlib import Path
 
-from .google_play import validate_app_id
+from .google_play import validate_app_id, utc_now
+from .google_play_storage import connect
+from contextlib import closing
 from .play_pipeline import run_once
 from .storage import write_json
 from .audit_play import audit
@@ -29,6 +31,21 @@ def load_apps(path: Path) -> list[dict[str, str]]:
     return apps
 
 
+def persist_assessments(db: Path, report: dict) -> None:
+    evaluated = {app['app_id']: app for app in report.get('evaluation', {}).get('apps', [])}
+    with closing(connect(db)) as connection, connection:
+        for app in report['apps']:
+            evidence = evaluated.get(app['app_id'])
+            attention = (report['verification_status'] != 'passed' or evidence is None or
+                         bool(evidence['warnings']) or bool(app.get('overlap') and (
+                             app['overlap']['gap_risk'] or app['overlap'].get('warnings'))))
+            connection.execute('INSERT OR REPLACE INTO play_source_assessments VALUES(?,?,?,?,?)', (
+                report['run_id'], app['app_id'], utc_now(),
+                'needs_attention' if attention else 'bounded_checks_passed',
+                json.dumps({'evaluation': evidence, 'overlap': app.get('overlap'),
+                            'verification_errors': report.get('verification_errors', {})})))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Collect bounded Google Play pages into a persistent database")
     parser.add_argument("--input", required=True, type=Path)
@@ -44,6 +61,7 @@ def main() -> int:
     parser.add_argument("--lang", default="en")
     parser.add_argument("--country", default="us")
     parser.add_argument("--resume", help="Resume a run ID printed by an earlier invocation")
+    parser.add_argument("--overlap-run", help="Stop an App when a review ID from this matching baseline run is observed")
     args = parser.parse_args()
     if not 1 <= args.runs <= 20 or not math.isfinite(args.interval) or args.interval < 0:
         parser.error("runs must be 1..20; interval must be nonnegative")
@@ -59,7 +77,8 @@ def main() -> int:
     for index in range(args.runs):
         report = run_once(apps=apps, db_path=args.db, count=args.count, pages=args.pages,
                           lang=args.lang, country=args.country, delay=args.delay,
-                          timeout=args.timeout, retries=args.retries, resume=args.resume)
+                          timeout=args.timeout, retries=args.retries, resume=args.resume,
+                          overlap_run=args.overlap_run)
         reports.append(report)
         report["verification_status"] = "pending"
         write_json(args.report, {"schema_version": 2, "runs": reports})
@@ -73,12 +92,23 @@ def main() -> int:
         report["verification_errors"] = errors
         report["verification_status"] = "failed" if errors or not report.get(
             "storage_audit", {}).get("storage_checks_passed") else "passed"
+        report["source_quality_status"] = "needs_attention" if errors or any(
+            app["warnings"] for app in report.get("evaluation", {}).get("apps", [])) or any(
+            app.get("overlap") and (app["overlap"]["gap_risk"] or app["overlap"].get("warnings"))
+            for app in report["apps"]) else "bounded_checks_passed"
+        try:
+            persist_assessments(args.db, report)
+        except (sqlite3.Error, OSError) as exc:
+            errors['quality_storage'] = f'{type(exc).__name__}: {exc}'
+            report['verification_status'] = 'failed'
+            report['source_quality_status'] = 'needs_attention'
         # Refresh after each run; completed runs survive later interruption.
         write_json(args.report, {"schema_version": 2, "runs": reports})
         if index + 1 < args.runs:
             time.sleep(args.interval)
     print(json.dumps({"schema_version": 2, "runs": reports}, indent=2))
     return 0 if all(r["status"] == "bounded_success" and r["verification_status"] == "passed"
+                    and r["source_quality_status"] == "bounded_checks_passed"
                     for r in reports) else 1
 
 

@@ -14,6 +14,7 @@ from pathlib import Path
 
 from .google_play import GooglePlayApp, app_url, normalize_review, utc_now, validate_app_id
 from .google_play_storage import connect, save_run, upsert_app, upsert_reviews
+from .evaluate_play import sample, timestamp
 
 
 SCHEMA = """
@@ -114,7 +115,7 @@ def run_once(*, db_path: Path, **kwargs) -> dict:
 def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
              pages: int = 2, lang: str = "en", country: str = "us",
              delay: float = 2, timeout: float = 25, retries: int = 2,
-             resume: str | None = None, fetcher=fetch_page) -> dict:
+             resume: str | None = None, overlap_run: str | None = None, fetcher=fetch_page) -> dict:
     if not apps or len({a["app_id"] for a in apps}) != len(apps):
         raise ValueError("Provide a non-empty list of distinct app IDs")
     for app in apps:
@@ -133,6 +134,23 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
               "sort": "NEWEST", "adapter": "strict-single-page-v2", "package": "1.2.7"}
     run_id = resume or str(uuid.uuid4())
     try:
+        baseline_ids = {}
+        if overlap_run:
+            baseline = connection.execute("SELECT * FROM collection_runs WHERE run_id=?", (overlap_run,)).fetchone()
+            if baseline is None:
+                raise ValueError("Overlap baseline run not found")
+            baseline_config = json.loads(baseline["report_json"]).get("config", {})
+            if any(baseline_config.get(key) != config[key] for key in ("lang", "country", "count", "sort", "adapter", "package")):
+                raise ValueError("Overlap baseline request settings differ")
+            for app in apps:
+                prior = connection.execute("SELECT status FROM play_jobs WHERE run_id=? AND app_id=?",
+                                           (overlap_run, app["app_id"])).fetchone()
+                ids = {row[0] for row in connection.execute(
+                    "SELECT review_id FROM review_observations WHERE run_id=? AND app_id=?", (overlap_run, app["app_id"]))}
+                if prior is None or prior[0] not in ("paused", "source_end") or not ids:
+                    raise ValueError("Overlap baseline must contain successful observations for every App")
+                baseline_ids[app["app_id"]] = ids
+            config["overlap_run"] = overlap_run
         if resume:
             saved = connection.execute("SELECT report_json FROM collection_runs WHERE run_id=?", (run_id,)).fetchone()
             if not saved or json.loads(saved[0]).get("config") != config:
@@ -155,6 +173,11 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
                 job = connection.execute("SELECT * FROM play_jobs WHERE run_id=? AND app_id=?", (run_id, app_id)).fetchone()
                 if job["status"] in ("source_end", "stalled", "quality_error"):
                     break
+                if overlap_run:
+                    observed = {row[0] for row in connection.execute(
+                        "SELECT review_id FROM review_observations WHERE run_id=? AND app_id=?", (run_id, app_id))}
+                    if observed & baseline_ids[app_id]:
+                        break
                 page_number = job["pages"] + 1
                 payload = None
                 for attempt in range(retries + 1):
@@ -288,12 +311,31 @@ def summarize(connection: sqlite3.Connection, run_id: str, config: dict) -> dict
             coalesce(sum(cross_page_duplicates),0) cross_page_duplicates
             FROM play_page_changes WHERE run_id=? AND app_id=?""", (run_id, job["app_id"])).fetchone())
         changes["unclassified_pages"] = job["pages"] - changes["classified_pages"]
+        overlap = None
+        if config.get("overlap_run"):
+            shared = connection.execute("""SELECT count(*) FROM review_observations current
+                JOIN review_observations baseline ON current.app_id=baseline.app_id AND current.review_id=baseline.review_id
+                WHERE current.run_id=? AND baseline.run_id=? AND current.app_id=?""",
+                (run_id, config["overlap_run"], job["app_id"])).fetchone()[0]
+            overlap = {"baseline_run_id": config["overlap_run"], "shared_ids": shared,
+                       "status": "boundary_observed" if shared else "overlap_not_reached",
+                       "gap_risk": not bool(shared), "complete_coverage": False, "warnings": []}
+            current_run = connection.execute("SELECT * FROM collection_runs WHERE run_id=?", (run_id,)).fetchone()
+            prior_run = connection.execute("SELECT * FROM collection_runs WHERE run_id=?", (config["overlap_run"],)).fetchone()
+            current_records, _ = sample(connection, current_run, job["app_id"])
+            previous_records, _ = sample(connection, prior_run, job["app_id"])
+            if current_records and previous_records:
+                delta = (max(timestamp(r.review_at) for r in current_records.values()) -
+                         max(timestamp(r.review_at) for r in previous_records.values())).total_seconds()
+                overlap['newest_timestamp_change_seconds'] = delta
+                if delta < 0:
+                    overlap['warnings'].append('Newest timestamp moved backwards relative to overlap baseline')
         failures = [dict(row) for row in connection.execute(
             "SELECT page,failed_at,error FROM play_storage_failures WHERE run_id=? AND app_id=? ORDER BY id",
             (run_id, job["app_id"]))]
         apps.append({"app_id": job["app_id"], "label": job["label"], "status": job["status"],
                      "pages": job["pages"], "can_resume": job["status"] in ("paused", "failed", "pending"),
-                     "error": job["error"], "storage_failures": failures, **counts, **changes})
+                     "error": job["error"], "storage_failures": failures, "overlap": overlap, **counts, **changes})
     integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
     fk = connection.execute("PRAGMA foreign_key_check").fetchall()
     clean = all(a["status"] in ("paused", "source_end") and a["accepted_records"] > 0 and a["rejected_records"] == 0 for a in apps)

@@ -79,6 +79,15 @@ CREATE TABLE IF NOT EXISTS review_observations (
 CREATE INDEX IF NOT EXISTS idx_reviews_app_date ON reviews(app_id, review_at DESC);
 CREATE INDEX IF NOT EXISTS idx_reviews_score ON reviews(score);
 CREATE INDEX IF NOT EXISTS idx_observations_app ON review_observations(app_id, run_id);
+
+CREATE TABLE IF NOT EXISTS play_source_assessments (
+    run_id TEXT NOT NULL REFERENCES collection_runs(run_id),
+    app_id TEXT NOT NULL,
+    assessed_at TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('needs_attention', 'bounded_checks_passed')),
+    report_json TEXT NOT NULL,
+    PRIMARY KEY (run_id, app_id)
+);
 """
 
 

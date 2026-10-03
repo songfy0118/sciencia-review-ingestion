@@ -25,7 +25,9 @@ Each round includes its collection report, source evaluation and database audit:
 
 `status` retains the collection outcome stored in SQLite. `verification_status`
 is separately pending, passed or failed; CLI success requires both bounded_success
-collection and passed verification. Source freshness warnings remain in evaluation
+collection and passed verification, plus source_quality_status=bounded_checks_passed.
+Freshness or missing-overlap warnings yield needs_attention and nonzero exit.
+Source freshness warnings remain in evaluation
 even when storage verification passes. A pending report is saved before checks;
 check exceptions are recorded in verification_errors and produce a nonzero exit.
 Reports replace the previous file atomically after writing and flushing a temporary
@@ -69,3 +71,8 @@ remain warnings even when all storage checks pass.
 Only aggregate reports belong in samples/. Raw review snapshots and database files
 remain in the ignored data/ directory. No author names or review text are needed
 in the evidence shared with John.
+
+Use [bounded catch-up](source-quality-2026-10-02.md) when a fixed window does not
+overlap the previous run. --overlap-run stops at an observed baseline ID or the
+page budget; it never claims complete coverage. Source assessments are stored
+in the same SQLite database. Older reports without these fields remain historical.

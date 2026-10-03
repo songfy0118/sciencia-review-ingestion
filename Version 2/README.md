@@ -7,6 +7,9 @@ Search saved app reviews, or paste a Google Play link to collect a small new sam
 ## Where to look
 
 Current milestone: [controlled repeated ingestion](docs/controlled-ingestion.md).
+The [October 2 source-quality follow-up](docs/source-quality-2026-10-02.md) adds
+bounded catch-up and database quality assessments. The store now holds 3,798
+unique reviews; Duolingo freshness and three missing-overlap windows remain flagged.
 See [September 29 results](docs/controlled-findings-2026-09-29.md): three live
 rounds, 3,000 observations, 1,003 unique stored reviews, with freshness still open.
 The [September 30 follow-up](docs/controlled-findings-2026-09-30.md) reused the

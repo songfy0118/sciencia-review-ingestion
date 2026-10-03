@@ -1,0 +1,41 @@
+{
+  "app_id": "com.duolingo",
+  "generated_at": "2026-10-03T04:35:18.202840Z",
+  "samples": [
+    {
+      "country_requested": "us",
+      "lang_requested": "en",
+      "collected_at": "2026-10-03T04:35:14.034808Z",
+      "status": "received",
+      "records": 50,
+      "unique_ids": 50,
+      "newest_returned_review": "2026-09-22T03:47:09Z",
+      "out_of_order_adjacent_pairs": 0,
+      "transport": {
+        "http_date": "Sat, 03 Oct 2026 04:35:18 GMT",
+        "age_header": null,
+        "request_sort": 2,
+        "response_at_utc": "2026-10-03T04:35:15.134132Z"
+      },
+      "same_ids_as_first_country": null
+    },
+    {
+      "country_requested": "gb",
+      "lang_requested": "en",
+      "collected_at": "2026-10-03T04:35:17.151075Z",
+      "status": "received",
+      "records": 50,
+      "unique_ids": 50,
+      "newest_returned_review": "2026-09-22T03:47:09Z",
+      "out_of_order_adjacent_pairs": 0,
+      "transport": {
+        "http_date": "Sat, 03 Oct 2026 04:35:21 GMT",
+        "age_header": null,
+        "request_sort": 2,
+        "response_at_utc": "2026-10-03T04:35:18.186133Z"
+      },
+      "same_ids_as_first_country": true
+    }
+  ],
+  "limitations": "Requested locales are not verified reviewer locations. This comparison does not identify the cause of stale results."
+}

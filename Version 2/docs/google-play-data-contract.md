@@ -13,6 +13,7 @@ The authoritative local store is the SQLite database passed as `--db`. Every suc
 | `play_attempts` | Successful and failed request attempts | `id` |
 | `play_page_changes` | Changed, unchanged, stale and cross-page overlap counts, committed with the page | `(run_id, app_id, page)` |
 | `play_storage_failures` | Database page failures retained after successful resume | `id` |
+| `play_source_assessments` | Per-App freshness and overlap evidence for downstream checks | `(run_id, app_id)` |
 
 Each review has an app ID, review ID, nonempty original-language content, integer score from 1 to 5, review timestamp, source URL and first/last collection timestamps. Optional developer replies and app versions use null when unavailable. Author names are display names, not verified user identities. The current collector uses configured app labels; title/developer/genre are not independently verified app metadata. See `google_play.py` and `google_play_storage.py` for exact fields.
 
