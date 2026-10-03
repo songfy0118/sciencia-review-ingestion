@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "reviews": 3798,
+  "apps": 5,
+  "snapshot_not_live_database": true,
+  "source": "Google Play; English/US bounded collection",
+  "contact_or_secret_replacements": 6,
+  "excluded_fields": [
+    "author_name",
+    "avatars",
+    "raw_source_snapshots",
+    "operational_logs",
+    "credentials"
+  ],
+  "privacy_limitations": "Pattern-based redaction is not a guarantee of complete anonymization; dates/numbers may be over-redacted.",
+  "quality": [
+    {
+      "app_id": "com.duolingo",
+      "quality_status": "needs_attention"
+    },
+    {
+      "app_id": "com.google.android.apps.maps",
+      "quality_status": "bounded_checks_passed"
+    },
+    {
+      "app_id": "com.netflix.mediaclient",
+      "quality_status": "needs_attention"
+    },
+    {
+      "app_id": "com.spotify.music",
+      "quality_status": "needs_attention"
+    },
+    {
+      "app_id": "com.whatsapp",
+      "quality_status": "needs_attention"
+    }
+  ],
+  "uncompressed_sha256": "c3bf7c255bafe8165a879d73dcf7b39ee3403c60028d7e935083d3aa2c4a1511",
+  "compressed_sha256": "029e1720c36e22454f7e42196665d06e34e73ba1515f352ffc5ccaa569c09f58",
+  "coverage": "Bounded sample, not complete history; source freshness warnings remain."
+}
