@@ -1,8 +1,8 @@
 # Version 2 — Google Play
 
-**[Try the public website](https://product-review-data.review-data-lab.workers.dev/)**
-
-Search saved app reviews, or paste a Google Play link to collect a small new sample. Records are saved to a shared online database; visitors do not need local files.
+Current deliverable: controlled, repeated App-review ingestion into local SQLite.
+Start with the [John requirements and acceptance summary](docs/john-acceptance-2026-10-02.md).
+No additional website work or unattended scheduling is part of this milestone.
 
 ## Where to look
 
@@ -29,6 +29,8 @@ measure the separate public D1 database.
 | [config/](config/) | Example app list |
 
 The public website stores data in Cloudflare D1. The Python workflow stores data in local SQLite. They are separate databases; new writes are not automatically mirrored between them.
+The [existing public website](https://product-review-data.review-data-lab.workers.dev/)
+is a separate historical demo, not the evidence for the current local experiment.
 
 ## What works, and what remains
 

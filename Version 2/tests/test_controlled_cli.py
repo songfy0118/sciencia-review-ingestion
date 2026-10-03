@@ -79,6 +79,15 @@ class ControlledCliTests(unittest.TestCase):
         self.assertEqual(report['verification_status'], 'passed')
         self.assertEqual(report['source_quality_status'], 'needs_attention')
 
+    def test_failed_audit_never_has_passing_source_quality(self):
+        report = self.invoke_with_check_failure('audit', lambda *args: {'storage_checks_passed': False})
+        self.assertEqual(report['verification_status'], 'failed')
+        self.assertEqual(report['source_quality_status'], 'needs_attention')
+
+    def test_missing_app_evaluation_never_has_passing_source_quality(self):
+        report = self.invoke_with_check_failure('evaluate', lambda *args: {'apps': []})
+        self.assertEqual(report['source_quality_status'], 'needs_attention')
+
     def test_three_rounds_report_real_database_changes(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

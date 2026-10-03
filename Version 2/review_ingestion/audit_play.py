@@ -17,7 +17,8 @@ def audit(db: Path) -> dict:
         raise ValueError("Database does not exist")
     with closing(sqlite3.connect(db.resolve().as_uri() + "?mode=ro", uri=True)) as c:
         c.row_factory = sqlite3.Row
-        issues, expected = [], {}
+        c.execute('BEGIN')
+        issues, expected, observations = [], {}, {}
         pages = c.execute("""SELECT p.*,r.lang,r.country FROM play_pages p JOIN collection_runs r
                              USING(run_id) ORDER BY p.collected_at,p.rowid""").fetchall()
         for page in pages:
@@ -25,16 +26,55 @@ def audit(db: Path) -> dict:
             if len(raw) != page["raw_count"] or page["raw_count"] != page["accepted"] + page["duplicates"] + page["rejected"]:
                 issues.append({"run_id": page["run_id"], "app_id": page["app_id"], "page": page["page"], "issue": "page_count_mismatch"})
             seen = set()
+            accepted = rejected = duplicates = new = repeated = changed = unchanged = cross_page = 0
             for item in raw:
                 try:
                     review = normalize_review(item, app_id=page["app_id"],
                         source_url=app_url(page["app_id"], page["lang"], page["country"]), collected_at=page["collected_at"])
                 except (TypeError, ValueError):
+                    rejected += 1
                     continue
                 if review.review_id not in seen:
+                    accepted += 1
+                    if (review.app_id, review.review_id) in expected:
+                        repeated += 1
+                        previous = expected[(review.app_id, review.review_id)]
+                        if any(previous.to_dict()[key] != value for key, value in review.to_dict().items()
+                               if key != 'collected_at'):
+                            changed += 1
+                        else:
+                            unchanged += 1
+                    else:
+                        new += 1
+                    observation_key = (page['run_id'], review.app_id, review.review_id)
+                    if observation_key in observations:
+                        cross_page += 1
+                    else:
+                        observations[observation_key] = review.content_hash
                     expected[(review.app_id, review.review_id)] = review
                     seen.add(review.review_id)
+                else:
+                    duplicates += 1
+            if (accepted, rejected, duplicates, new, repeated) != (
+                    page['accepted'], page['rejected'], page['duplicates'], page['new_count'], page['repeated_count']):
+                issues.append({'run_id': page['run_id'], 'app_id': page['app_id'], 'page': page['page'],
+                               'issue': 'derived_accounting_mismatch'})
+            changes = c.execute('SELECT * FROM play_page_changes WHERE run_id=? AND app_id=? AND page=?',
+                                (page['run_id'], page['app_id'], page['page'])).fetchone()
+            if changes and (changes['changed'] + changes['unchanged'] + changes['stale'] != repeated or
+                            (not changes['stale'] and (changes['changed'], changes['unchanged']) != (changed, unchanged)) or
+                            changes['cross_page_duplicates'] != cross_page):
+                issues.append({'run_id': page['run_id'], 'app_id': page['app_id'], 'page': page['page'],
+                               'issue': 'change_accounting_mismatch'})
+        for job in c.execute('SELECT * FROM play_jobs'):
+            saved_pages = [p for p in pages if p['run_id'] == job['run_id'] and p['app_id'] == job['app_id']]
+            if [p['page'] for p in sorted(saved_pages, key=lambda p: p['page'])] != list(range(1, job['pages'] + 1)):
+                issues.append({'run_id': job['run_id'], 'app_id': job['app_id'], 'issue': 'checkpoint_page_mismatch'})
         mismatches = 0
+        stored_observations = {tuple(row[:3]): row[3] for row in c.execute(
+            'SELECT run_id,app_id,review_id,content_hash FROM review_observations')}
+        if stored_observations != observations:
+            issues.append({'issue': 'observation_snapshot_mismatch'})
         for (app_id, review_id), review in expected.items():
             stored = c.execute("SELECT * FROM reviews WHERE app_id=? AND review_id=?", (app_id, review_id)).fetchone()
             if stored is None or any(stored[key] != value for key, value in review.to_dict().items() if key != "collected_at"):

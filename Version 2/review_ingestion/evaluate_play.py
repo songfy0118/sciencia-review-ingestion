@@ -5,6 +5,7 @@ import json
 import sqlite3
 from contextlib import closing
 from datetime import datetime
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 from .google_play import app_url, normalize_review, utc_now
@@ -38,6 +39,7 @@ def sample(connection, run, app_id):
 def evaluate(db: Path, run_id: str) -> dict:
     with closing(sqlite3.connect(db.resolve().as_uri() + "?mode=ro", uri=True)) as c:
         c.row_factory = sqlite3.Row
+        c.execute('BEGIN')
         run = c.execute("SELECT * FROM collection_runs WHERE run_id=?", (run_id,)).fetchone()
         if run is None:
             raise ValueError("Run not found")
@@ -48,7 +50,29 @@ def evaluate(db: Path, run_id: str) -> dict:
             warnings = []
             if job["status"] not in ("paused", "source_end") or not records:
                 warnings.append("Current collection incomplete or failed; inspect the run report")
+            if run['status'] != 'bounded_success':
+                warnings.append('Current run not completed successfully; comparisons withheld')
             dates = [timestamp(r.review_at) for r in records.values()]
+            inversions = sum(later > earlier for earlier, later in zip(dates, dates[1:]))
+            if inversions:
+                warnings.append('Returned NEWEST window has adjacent timestamp inversions; overlap does not establish continuity')
+            transport = [json.loads(row[0]) for row in c.execute(
+                'SELECT transport_json FROM play_page_transport WHERE run_id=? AND app_id=? ORDER BY page',
+                (run_id, job['app_id']))] if c.execute(
+                    "SELECT 1 FROM sqlite_master WHERE name='play_page_transport'").fetchone() else []
+            clock_deltas = []
+            for metadata in transport:
+                if metadata.get('request_sort') != 2:
+                    warnings.append('Recorded request sort differs from NEWEST')
+                if metadata.get('http_date') and metadata.get('response_at_utc'):
+                    try:
+                        delta = (timestamp(metadata['response_at_utc']) - parsedate_to_datetime(metadata['http_date'])).total_seconds()
+                    except (ValueError, TypeError, OverflowError):
+                        warnings.append('Invalid recorded source clock metadata')
+                    else:
+                        clock_deltas.append(delta)
+                        if abs(delta) > 300:
+                            warnings.append('Source HTTP clock differs from local receipt time by over five minutes')
             newest = max(dates) if dates else None
             age = (timestamp(observed_at) - newest).total_seconds() / 86400 if newest and observed_at else None
             if age is not None and age > 7:
@@ -59,12 +83,12 @@ def evaluate(db: Path, run_id: str) -> dict:
             # Equal page count and request settings are necessary for useful ID overlap.
             candidates = c.execute("""SELECT r.* FROM collection_runs r JOIN play_jobs j USING(run_id)
                 WHERE j.app_id=? AND r.run_id<>? AND r.started_at<?
-                AND j.pages=? AND j.status IN ('paused','source_end')
+                AND j.pages=? AND j.status IN ('paused','source_end') AND r.status='bounded_success'
                 AND r.lang=? AND r.country=? AND r.requested_per_app=?
                 ORDER BY r.started_at DESC""",
                 (job["app_id"], run_id, run["started_at"], job["pages"], run["lang"], run["country"], run["requested_per_app"]))
             for earlier in candidates:
-                if job["status"] not in ("paused", "source_end"):
+                if job["status"] not in ("paused", "source_end") or run['status'] != 'bounded_success':
                     break
                 previous_config = json.loads(earlier["report_json"]).get("config", {})
                 if any(previous_config.get(k) != config.get(k) for k in ("sort", "adapter", "package")):
@@ -98,6 +122,9 @@ def evaluate(db: Path, run_id: str) -> dict:
                             "sample_collected_at": observed_at,
                             "newest_returned_review": newest.isoformat().replace("+00:00", "Z") if newest else None,
                             "newest_review_age_days_at_collection": round(age, 2) if age is not None else None,
+                            "adjacent_timestamp_inversions": inversions,
+                            "transport_recorded_pages": len(transport),
+                            "http_clock_deltas_seconds": clock_deltas,
                             "comparison": comparison, "warnings": warnings})
         return {"run_id": run_id, "generated_at": utc_now(), "apps": results,
                 "recommendation": "investigate_source_quality" if any(a["warnings"] for a in results) else "continue_bounded_evaluation",

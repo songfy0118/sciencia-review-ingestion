@@ -88,6 +88,40 @@ class EvaluationTests(unittest.TestCase):
         self.assertIsNone(item['comparison'])
         self.assertTrue(any('incomplete or failed' in warning for warning in item['warnings']))
 
+    def test_failed_prior_run_is_not_used_for_comparison(self):
+        first = self.collect([record()], hours_ago=24)
+        with closing(sqlite3.connect(self.db)) as c:
+            c.execute("UPDATE collection_runs SET status='needs_attention' WHERE run_id=?", (first,))
+            c.commit()
+        current = self.collect([record()])
+        self.assertIsNone(evaluate(self.db, current)['apps'][0]['comparison'])
+
+    def test_failed_current_run_with_successful_app_is_not_comparable(self):
+        self.collect([record()], hours_ago=24)
+        current = self.collect([record()])
+        with closing(sqlite3.connect(self.db)) as c:
+            c.execute("UPDATE collection_runs SET status='needs_attention' WHERE run_id=?", (current,))
+            c.commit()
+        result = evaluate(self.db, current)['apps'][0]
+        self.assertIsNone(result['comparison'])
+        self.assertTrue(any('comparisons withheld' in w for w in result['warnings']))
+
+    def test_newest_inversions_are_diagnostic(self):
+        current = self.collect([record('older'), record('newer', at='2020-01-02T00:00:00Z')])
+        item = evaluate(self.db, current)['apps'][0]
+        self.assertEqual(item['adjacent_timestamp_inversions'], 1)
+        self.assertTrue(any('inversions' in w for w in item['warnings']))
+
+    def test_transport_clock_and_sort_are_evaluated(self):
+        run = run_once(db_path=self.db, apps=[dict(app_id='com.example.app', label='Example')],
+            pages=1, delay=0, fetcher=lambda **_: {'records': [record()], 'cursor': None,
+                'transport': {'request_sort': 1, 'http_date': 'Fri, 02 Oct 2026 04:00:00 GMT',
+                              'response_at_utc': '2026-10-02T05:00:00Z'}})
+        item = evaluate(self.db, run['run_id'])['apps'][0]
+        self.assertEqual(item['http_clock_deltas_seconds'], [3600])
+        self.assertTrue(any('sort differs' in w for w in item['warnings']))
+        self.assertTrue(any('five minutes' in w for w in item['warnings']))
+
 
 if __name__ == '__main__':
     unittest.main()

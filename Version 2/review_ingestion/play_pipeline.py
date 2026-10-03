@@ -50,6 +50,23 @@ CREATE TABLE IF NOT EXISTS play_storage_failures (
  page INTEGER NOT NULL, failed_at TEXT NOT NULL, error TEXT NOT NULL,
  FOREIGN KEY(run_id, app_id) REFERENCES play_jobs(run_id, app_id)
 );
+CREATE TABLE IF NOT EXISTS play_page_transport (
+ run_id TEXT NOT NULL, app_id TEXT NOT NULL, page INTEGER NOT NULL,
+ transport_json TEXT NOT NULL,
+ PRIMARY KEY(run_id, app_id, page),
+ FOREIGN KEY(run_id, app_id, page) REFERENCES play_pages(run_id, app_id, page)
+);
+CREATE VIEW IF NOT EXISTS latest_play_source_quality AS
+ WITH ranked AS (
+  SELECT j.run_id,j.app_id,r.status collection_status,j.status job_status,
+   ROW_NUMBER() OVER(PARTITION BY j.app_id ORDER BY r.started_at DESC,r.rowid DESC) rank
+  FROM play_jobs j JOIN collection_runs r USING(run_id)
+ )
+ SELECT q.run_id,q.app_id,q.collection_status,q.job_status,
+  CASE WHEN q.collection_status='running' THEN 'unassessed'
+       ELSE COALESCE(a.status,'unassessed') END quality_status,a.report_json
+ FROM ranked q LEFT JOIN play_source_assessments a USING(run_id,app_id)
+ WHERE q.rank=1;
 """
 
 
@@ -139,6 +156,8 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
             baseline = connection.execute("SELECT * FROM collection_runs WHERE run_id=?", (overlap_run,)).fetchone()
             if baseline is None:
                 raise ValueError("Overlap baseline run not found")
+            if baseline['status'] != 'bounded_success' or overlap_run == run_id:
+                raise ValueError("Overlap baseline must be a distinct completed successful run")
             baseline_config = json.loads(baseline["report_json"]).get("config", {})
             if any(baseline_config.get(key) != config[key] for key in ("lang", "country", "count", "sort", "adapter", "package")):
                 raise ValueError("Overlap baseline request settings differ")
@@ -167,6 +186,7 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
         print(f"Run {run_id}: checkpoint database {db_path}", file=sys.stderr, flush=True)
         with connection:
             connection.execute("UPDATE collection_runs SET status='running', completed_at='' WHERE run_id=?", (run_id,))
+            connection.execute('DELETE FROM play_source_assessments WHERE run_id=?', (run_id,))
         for app in apps:
             app_id = app["app_id"]
             for _ in range(pages):
@@ -189,6 +209,8 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
                                           country=country, cursor=job["cursor"], timeout=timeout)
                         if not isinstance(payload, dict) or not isinstance(payload.get("records"), list):
                             raise SourceError("Review response is not a list")
+                        if 'transport' in payload and not isinstance(payload['transport'], dict):
+                            raise SourceError("Invalid transport metadata")
                         cursor = payload.get("cursor")
                         if cursor is not None and (not isinstance(cursor, str) or not cursor):
                             raise SourceError("Invalid continuation token")
@@ -244,6 +266,9 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
                          json.dumps(payload["records"], ensure_ascii=False), json.dumps(rejects)))
                     connection.execute("INSERT INTO play_page_changes VALUES(?,?,?,?,?,?,?)",
                         (run_id, app_id, page_number, *changes, len(seen & prior_ids)))
+                    if 'transport' in payload:
+                        connection.execute('INSERT INTO play_page_transport VALUES(?,?,?,?)',
+                            (run_id, app_id, page_number, json.dumps(payload['transport'])))
                     connection.executemany(
                         "INSERT OR IGNORE INTO review_observations VALUES(?,?,?,?,?,?)",
                         [(run_id, app_id, r.review_id, job["pages"] * count + i,

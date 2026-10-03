@@ -31,17 +31,27 @@ def load_apps(path: Path) -> list[dict[str, str]]:
     return apps
 
 
+def assessment_status(report: dict, app: dict, evidence: dict | None) -> str:
+    attention = (report['verification_status'] != 'passed' or
+                 app['status'] not in ('paused', 'source_end') or evidence is None or
+                 bool(evidence['warnings']) or bool(app.get('overlap') and (
+                     app['overlap']['gap_risk'] or app['overlap'].get('warnings'))))
+    return 'needs_attention' if attention else 'bounded_checks_passed'
+
+
 def persist_assessments(db: Path, report: dict) -> None:
     evaluated = {app['app_id']: app for app in report.get('evaluation', {}).get('apps', [])}
     with closing(connect(db)) as connection, connection:
+        connection.execute('BEGIN IMMEDIATE')
+        saved = connection.execute('SELECT status,report_json FROM collection_runs WHERE run_id=?',
+                                   (report['run_id'],)).fetchone()
+        if not saved or saved[0] == 'running' or json.loads(saved[1]).get('generated_at') != report['generated_at']:
+            raise ValueError('Collection changed during verification; rerun verification before publishing quality')
         for app in report['apps']:
             evidence = evaluated.get(app['app_id'])
-            attention = (report['verification_status'] != 'passed' or evidence is None or
-                         bool(evidence['warnings']) or bool(app.get('overlap') and (
-                             app['overlap']['gap_risk'] or app['overlap'].get('warnings'))))
             connection.execute('INSERT OR REPLACE INTO play_source_assessments VALUES(?,?,?,?,?)', (
                 report['run_id'], app['app_id'], utc_now(),
-                'needs_attention' if attention else 'bounded_checks_passed',
+                assessment_status(report, app, evidence),
                 json.dumps({'evaluation': evidence, 'overlap': app.get('overlap'),
                             'verification_errors': report.get('verification_errors', {})})))
 
@@ -92,13 +102,13 @@ def main() -> int:
         report["verification_errors"] = errors
         report["verification_status"] = "failed" if errors or not report.get(
             "storage_audit", {}).get("storage_checks_passed") else "passed"
-        report["source_quality_status"] = "needs_attention" if errors or any(
-            app["warnings"] for app in report.get("evaluation", {}).get("apps", [])) or any(
-            app.get("overlap") and (app["overlap"]["gap_risk"] or app["overlap"].get("warnings"))
-            for app in report["apps"]) else "bounded_checks_passed"
+        evaluated = {app['app_id']: app for app in report.get('evaluation', {}).get('apps', [])}
+        report['source_quality_status'] = 'needs_attention' if any(
+            assessment_status(report, app, evaluated.get(app['app_id'])) == 'needs_attention'
+            for app in report['apps']) else 'bounded_checks_passed'
         try:
             persist_assessments(args.db, report)
-        except (sqlite3.Error, OSError) as exc:
+        except (ValueError, sqlite3.Error, OSError) as exc:
             errors['quality_storage'] = f'{type(exc).__name__}: {exc}'
             report['verification_status'] = 'failed'
             report['source_quality_status'] = 'needs_attention'

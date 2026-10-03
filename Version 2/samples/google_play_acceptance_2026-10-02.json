@@ -1,0 +1,74 @@
+{
+  "evidence_type": "read_only_snapshot_reassessment_and_offline_acceptance",
+  "source_run_id": "0dbb95dc-3ed9-44fa-bad9-ed64de46c127",
+  "additional_source_requests": 0,
+  "audit": {
+    "committed_pages": 58,
+    "source_records_seen": 5800,
+    "unique_reviews": 3798,
+    "snapshot_mismatches": 0,
+    "count_issues": [],
+    "storage_checks_passed": true
+  },
+  "current_quality": [
+    {
+      "app_id": "com.duolingo",
+      "quality_status": "needs_attention"
+    },
+    {
+      "app_id": "com.google.android.apps.maps",
+      "quality_status": "bounded_checks_passed"
+    },
+    {
+      "app_id": "com.netflix.mediaclient",
+      "quality_status": "needs_attention"
+    },
+    {
+      "app_id": "com.spotify.music",
+      "quality_status": "needs_attention"
+    },
+    {
+      "app_id": "com.whatsapp",
+      "quality_status": "needs_attention"
+    }
+  ],
+  "source_diagnostics": [
+    {
+      "app_id": "com.duolingo",
+      "adjacent_timestamp_inversions": 0,
+      "transport_recorded_pages": 0,
+      "warnings": [
+        "Newest returned review was over seven days old at collection"
+      ]
+    },
+    {
+      "app_id": "com.google.android.apps.maps",
+      "adjacent_timestamp_inversions": 0,
+      "transport_recorded_pages": 0,
+      "warnings": []
+    },
+    {
+      "app_id": "com.netflix.mediaclient",
+      "adjacent_timestamp_inversions": 0,
+      "transport_recorded_pages": 0,
+      "warnings": []
+    },
+    {
+      "app_id": "com.spotify.music",
+      "adjacent_timestamp_inversions": 0,
+      "transport_recorded_pages": 0,
+      "warnings": []
+    },
+    {
+      "app_id": "com.whatsapp",
+      "adjacent_timestamp_inversions": 0,
+      "transport_recorded_pages": 0,
+      "warnings": []
+    }
+  ],
+  "limitations": [
+    "Existing pages predate durable transport capture; absent metadata is not a verified source clock.",
+    "Offline fixtures are not live source observations.",
+    "Source freshness and complete coverage are not guaranteed."
+  ]
+}

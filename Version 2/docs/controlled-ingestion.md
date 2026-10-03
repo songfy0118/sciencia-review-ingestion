@@ -76,3 +76,11 @@ Use [bounded catch-up](source-quality-2026-10-02.md) when a fixed window does no
 overlap the previous run. --overlap-run stops at an observed baseline ID or the
 page budget; it never claims complete coverage. Source assessments are stored
 in the same SQLite database. Older reports without these fields remain historical.
+
+Current acceptance: [John requirements and verification](john-acceptance-2026-10-02.md).
+The audit now reconstructs page accounting, changed/unchanged counts, observation
+hashes and page checkpoints from saved snapshots. Request transport metadata is
+saved with new pages. Source evaluation diagnoses adjacent date inversions and
+HTTP/local clock differences. Failed runs are excluded from comparisons and
+catch-up baselines. Downstream callers can read `latest_play_source_quality`;
+resuming a run clears its old assessment before collection begins.

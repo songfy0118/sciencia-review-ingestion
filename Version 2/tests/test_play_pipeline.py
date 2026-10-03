@@ -153,6 +153,69 @@ class PipelineTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'settings differ'):
             self.run_page([record()], overlap_run=baseline['run_id'], country='gb')
 
+    def test_failed_run_cannot_be_a_catchup_baseline(self):
+        baseline = self.run_page([record('old')])
+        with closing(sqlite3.connect(self.db)) as c:
+            c.execute("UPDATE collection_runs SET status='needs_attention'")
+            c.commit()
+        with self.assertRaisesRegex(ValueError, 'completed successful'):
+            self.run_page([record()], overlap_run=baseline['run_id'])
+
+    def test_resume_invalidates_prior_quality_before_fetch(self):
+        from review_ingestion.google_play_cli import persist_assessments
+        from review_ingestion.evaluate_play import evaluate
+        first = self.run_page([record()], 'next')
+        first['verification_status'] = 'passed'
+        first['evaluation'] = evaluate(self.db, first['run_id'])
+        persist_assessments(self.db, first)
+        def fetch(**_):
+            self.assertEqual(self.query('SELECT count(*) FROM play_source_assessments'), [(0,)])
+            self.assertEqual(self.query('SELECT quality_status FROM latest_play_source_quality'), [('unassessed',)])
+            return {'records': [record('next')], 'cursor': None}
+        run_once(**self.args, resume=first['run_id'], fetcher=fetch)
+        with self.assertRaisesRegex(ValueError, 'changed during verification'):
+            persist_assessments(self.db, first)
+
+    def test_transport_is_atomic_with_page(self):
+        metadata = {'request_sort': 2, 'http_date': 'Fri, 02 Oct 2026 04:00:00 GMT',
+                    'response_at_utc': '2026-10-02T04:00:02Z', 'age_header': None}
+        run_once(**self.args, fetcher=lambda **_: {'records': [record()], 'cursor': None, 'transport': metadata})
+        self.assertEqual(json.loads(self.query('SELECT transport_json FROM play_page_transport')[0][0]), metadata)
+        with closing(sqlite3.connect(self.db)) as c:
+            c.execute("CREATE TRIGGER fail_transport BEFORE INSERT ON play_page_transport BEGIN SELECT RAISE(ABORT,'transport write failed'); END")
+            c.commit()
+        failed = run_once(**self.args, fetcher=lambda **_: {'records': [record('two')], 'cursor': None, 'transport': metadata})
+        self.assertEqual(failed['status'], 'needs_attention')
+        self.assertEqual(self.query('SELECT count(*) FROM reviews'), [(1,)])
+        self.assertEqual(self.query('SELECT count(*) FROM play_pages'), [(1,)])
+
+    def test_audit_recomputes_accounting_and_checkpoints(self):
+        from review_ingestion.audit_play import audit
+        self.run_page([record('one'), record('two')])
+        self.run_page([record('one')])
+        self.assertTrue(audit(self.db)['storage_checks_passed'])
+        with closing(sqlite3.connect(self.db)) as c:
+            c.execute('UPDATE play_pages SET new_count=0,repeated_count=2 WHERE new_count=2')
+            c.execute('UPDATE play_jobs SET pages=3')
+            c.commit()
+        result = audit(self.db)
+        self.assertFalse(result['storage_checks_passed'])
+        issues = {item['issue'] for item in result['count_issues']}
+        self.assertIn('derived_accounting_mismatch', issues)
+        self.assertIn('checkpoint_page_mismatch', issues)
+
+    def test_audit_detects_observation_hash_and_false_change_counts(self):
+        from review_ingestion.audit_play import audit
+        self.run_page([record()])
+        self.run_page([record()])
+        with closing(sqlite3.connect(self.db)) as c:
+            c.execute("UPDATE review_observations SET content_hash='wrong'")
+            c.execute('UPDATE play_page_changes SET changed=1,unchanged=0 WHERE unchanged=1')
+            c.commit()
+        issues = {item['issue'] for item in audit(self.db)['count_issues']}
+        self.assertIn('observation_snapshot_mismatch', issues)
+        self.assertIn('change_accounting_mismatch', issues)
+
     def test_backwards_date_is_detected_even_with_different_page_counts(self):
         baseline = self.run_page([record('old', at='2026-09-28T10:00:00Z')], 'next')
         self.run_page([record('older', at='2026-09-27T10:00:00Z')], resume=baseline['run_id'])

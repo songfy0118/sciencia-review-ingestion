@@ -80,17 +80,12 @@ Read current quality using collection time rather than assessment time, since
 older runs may be re-evaluated later:
 
 ```sql
-WITH latest AS (
-  SELECT j.run_id,j.app_id,
-         ROW_NUMBER() OVER (PARTITION BY j.app_id ORDER BY r.started_at DESC,r.rowid DESC) AS rank
-  FROM play_jobs j JOIN collection_runs r USING(run_id)
-)
-SELECT l.app_id,COALESCE(a.status,'unassessed') AS quality,a.report_json
-FROM latest l LEFT JOIN play_source_assessments a USING(run_id,app_id)
-WHERE l.rank=1;
+SELECT app_id,collection_status,job_status,quality_status,report_json
+FROM latest_play_source_quality ORDER BY app_id;
 ```
 
 Unassessed is not a passing quality result. bounded_checks_passed is not a source
 freshness SLA or a coverage guarantee. Public D1 remains separate from this local
-SQLite experiment. Sixty-seven Python tests passed, covering bounded overlap, resume,
-budget exhaustion, incompatible baselines, UTC timestamps and assessment storage.
+SQLite experiment. The [acceptance follow-up](john-acceptance-2026-10-02.md) adds
+resume-time quality invalidation, durable transport evidence, snapshot-derived
+accounting and multi-App offline failure recovery tests.
