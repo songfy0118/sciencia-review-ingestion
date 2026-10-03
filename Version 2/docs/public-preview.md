@@ -40,7 +40,16 @@ node "../Version 1/archive/amazon/site/node_modules/wrangler/bin/wrangler.js" d1
 node "../Version 1/archive/amazon/site/node_modules/wrangler/bin/wrangler.js" deploy --config web/wrangler.jsonc
 ```
 
-Seed SQL is ignored by Git and uses conflict-do-nothing semantics so rerunning it cannot overwrite a newer cloud review. Initial schema setup and seeding are one-time deployment steps; ordinary releases only need testing and deployment.
+Seed SQL is ignored by Git. The updated exporter merges reviews only when the
+local collection timestamp is newer, preserves cloud-only reviews, and omits
+reviewer identities and local logs. Equal-time conflicts do not overwrite the
+cloud record. Initial schema setup is a one-time deployment step; later data
+syncs import the generated SQL without replacing the database.
+
+See [October 3 sync preparation](public-sync-2026-10-03.md). The 3,798-row local
+projection is prepared and tested but has not been imported into D1: the original
+Cloudflare management sign-in is not available on this computer. This is not
+automatic mirroring or a scheduled collector.
 
 Tests cover source-shape failures, URL validation, duplicate updates, atomic rollback, failed-page recovery, exact-app search, filters, shared quota and cross-origin rejection. The live deployment also needs checking because the Workers runtime differs from Node: the initial `redirect: error` setting failed on Workers and was replaced with `manual`, with a regression test that rejects redirects. The failed live run is retained in the run history as evidence.
 

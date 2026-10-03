@@ -3,6 +3,9 @@
 Current deliverable: controlled, repeated App-review ingestion into local SQLite.
 Start with the [John requirements and acceptance summary](docs/john-acceptance-2026-10-02.md).
 No additional website work or unattended scheduling is part of this milestone.
+The requested [manual local-to-public sync](docs/public-sync-2026-10-03.md) is
+prepared but awaiting the original Cloudflare management login; it is not yet
+an uploaded dataset or automatic mirroring.
 
 ## Where to look
 

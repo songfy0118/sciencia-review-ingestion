@@ -1,0 +1,20 @@
+{
+  "status": "prepared_not_uploaded",
+  "local_unique_reviews": 3798,
+  "local_storage_audit_passed": true,
+  "public_projection_reviews": 3798,
+  "after_repeat_import": 3798,
+  "foreign_key_issues": 0,
+  "tests_passed": 83,
+  "sql_file_bytes": 2824101,
+  "excluded_fields": [
+    "author_name",
+    "avatars",
+    "raw_source_snapshots",
+    "local_operational_logs",
+    "credentials"
+  ],
+  "update_policy": "merge_existing_preserve_cloud_only_and_newer_cloud_records",
+  "cloud_upload_completed": false,
+  "blocker": "Cloudflare management sign-in not available on this computer"
+}
