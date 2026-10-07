@@ -37,7 +37,7 @@ The browser page was checked in English / US with Phone selected, no star filter
   - `6ad8e50c-47df-4aeb-b35f-6bbec85589ac`: 2026-09-27T03:41:26Z.
   - `84e54a0e-e134-4fb3-a550-701a4e1cf8e4`: 2026-09-27T01:09:19Z.
 - [Spotify](https://play.google.com/store/apps/details?id=com.spotify.music&hl=en_US&gl=US): the first visible reviews under Newest showed October 6, 2026, consistent at day precision with the collector.
-- [Google Maps](https://play.google.com/store/apps/details?id=com.google.android.apps.maps&hl=en_US&gl=US): the page and review dialog opened and Newest was selected, but subsequent browser reads timed out twice. Its final review dates were not verified. Do not count it as a completed UI control.
+- [Google Maps](https://play.google.com/store/apps/details?id=com.google.android.apps.maps&hl=en_US&gl=US): initial browser reads timed out twice. A later manual session on October 7 successfully read the Newest dialog with Phone selected and no star filter. The first five visible review dates were October 6, 2026, consistent at day precision with the collector. This completes the second store-page control; review-ID matching was not checked for this App.
 
 No screenshot artifact was saved; the UI observations above come from the browser accessibility/DOM reads during this session. Only dates and Duolingo review IDs are included here, not reviewer names or review text.
 
@@ -54,8 +54,8 @@ Across all ten saved pages, transport metadata was present, NEWEST ordering had 
 - SQLite integrity: ok; foreign-key issues: 0.
 - Saved snapshot mismatches: 0; accounting issues: 0.
 - Storage verification passed. Overall source quality remains needs_attention because of Duolingo freshness; the CLI exit code was 1 for that warning, not a failed final collection.
-- Existing offline suite: 85 tests passed on October 7.
+- Offline suite after adding the multi-day summary tool: 92 tests passed on October 7.
 - Full machine-readable evidence: [collection report](../samples/google_play_controlled_2026-10-07.json).
 - Repeat the same capped protocol on October 8 and October 9 using the same database and new dated reports. These are planned runs, not completed or scheduled runs.
-- Complete the Google Maps store-page control in a later manual session.
+- Google Maps store-page control completed in the later October 7 manual session.
 - Only after the multi-day observations should collection frequency and a simple scheduler be discussed.
