@@ -1,0 +1,230 @@
+{
+  "date_basis": "UTC date of saved sample collection, not report generation",
+  "rows": [
+    {
+      "run_id": "f6092027-17fe-47b9-a760-627269b8110e",
+      "app_id": "com.spotify.music",
+      "label": "Spotify",
+      "observed_at": "2026-10-07T20:42:17.518919Z",
+      "day_utc": "2026-10-07",
+      "valid_collection": true,
+      "accepted": 200,
+      "new": 200,
+      "repeated": 0,
+      "updated": 0,
+      "unchanged": 0,
+      "stale": 0,
+      "accounting_ok": true,
+      "newest_review": "2026-10-06T20:40:28Z",
+      "age_days": 1,
+      "warnings": [],
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7"
+      },
+      "pages": 2
+    },
+    {
+      "run_id": "f6092027-17fe-47b9-a760-627269b8110e",
+      "app_id": "com.duolingo",
+      "label": "Duolingo",
+      "observed_at": "2026-10-07T20:42:23.930893Z",
+      "day_utc": "2026-10-07",
+      "valid_collection": true,
+      "accepted": 200,
+      "new": 199,
+      "repeated": 1,
+      "updated": 1,
+      "unchanged": 0,
+      "stale": 0,
+      "accounting_ok": true,
+      "newest_review": "2026-09-27T04:21:41Z",
+      "age_days": 10.68,
+      "warnings": [
+        "Newest returned review was over seven days old at collection"
+      ],
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7"
+      },
+      "pages": 2
+    },
+    {
+      "run_id": "f6092027-17fe-47b9-a760-627269b8110e",
+      "app_id": "com.google.android.apps.maps",
+      "label": "Google Maps",
+      "observed_at": "2026-10-07T20:42:28.960583Z",
+      "day_utc": "2026-10-07",
+      "valid_collection": true,
+      "accepted": 200,
+      "new": 199,
+      "repeated": 1,
+      "updated": 1,
+      "unchanged": 0,
+      "stale": 0,
+      "accounting_ok": true,
+      "newest_review": "2026-10-06T20:38:52Z",
+      "age_days": 1,
+      "warnings": [],
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7"
+      },
+      "pages": 2
+    },
+    {
+      "run_id": "f6092027-17fe-47b9-a760-627269b8110e",
+      "app_id": "com.whatsapp",
+      "label": "WhatsApp",
+      "observed_at": "2026-10-07T20:42:34.142555Z",
+      "day_utc": "2026-10-07",
+      "valid_collection": true,
+      "accepted": 200,
+      "new": 200,
+      "repeated": 0,
+      "updated": 0,
+      "unchanged": 0,
+      "stale": 0,
+      "accounting_ok": true,
+      "newest_review": "2026-10-06T20:42:14Z",
+      "age_days": 1,
+      "warnings": [],
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7"
+      },
+      "pages": 2
+    },
+    {
+      "run_id": "f6092027-17fe-47b9-a760-627269b8110e",
+      "app_id": "com.netflix.mediaclient",
+      "label": "Netflix",
+      "observed_at": "2026-10-07T20:42:39.211733Z",
+      "day_utc": "2026-10-07",
+      "valid_collection": true,
+      "accepted": 200,
+      "new": 200,
+      "repeated": 0,
+      "updated": 0,
+      "unchanged": 0,
+      "stale": 0,
+      "accounting_ok": true,
+      "newest_review": "2026-10-06T20:38:49Z",
+      "age_days": 1,
+      "warnings": [],
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7"
+      },
+      "pages": 2
+    }
+  ],
+  "coverage": [
+    {
+      "app_id": "com.duolingo",
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7"
+      },
+      "pages": 2,
+      "valid_days_utc": [
+        "2026-10-07"
+      ],
+      "longest_consecutive_days": 1
+    },
+    {
+      "app_id": "com.google.android.apps.maps",
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7"
+      },
+      "pages": 2,
+      "valid_days_utc": [
+        "2026-10-07"
+      ],
+      "longest_consecutive_days": 1
+    },
+    {
+      "app_id": "com.netflix.mediaclient",
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7"
+      },
+      "pages": 2,
+      "valid_days_utc": [
+        "2026-10-07"
+      ],
+      "longest_consecutive_days": 1
+    },
+    {
+      "app_id": "com.spotify.music",
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7"
+      },
+      "pages": 2,
+      "valid_days_utc": [
+        "2026-10-07"
+      ],
+      "longest_consecutive_days": 1
+    },
+    {
+      "app_id": "com.whatsapp",
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7"
+      },
+      "pages": 2,
+      "valid_days_utc": [
+        "2026-10-07"
+      ],
+      "longest_consecutive_days": 1
+    }
+  ],
+  "limitations": [
+    "Same-day runs count as one day; parameter changes form separate groups.",
+    "A valid collection can still have freshness warnings; inspect warnings.",
+    "New means new to this database; updated is a subset of repeated.",
+    "Coverage does not establish source completeness or scheduler readiness."
+  ]
+}
