@@ -32,6 +32,6 @@ See [October 7 summary](../samples/john_multiday_summary_2026-10-07.json) and [s
 
 For Duolingo and controls, open the English / US Google Play listing, select Phone, leave star ratings unfiltered, open all reviews and explicitly select Newest. Record the observed date and whether visible IDs match the collected sample where available. Store UI dates have day precision and signed-in browser context may differ from the collector.
 
-October 7: Duolingo's first three visible IDs match the run and show September 27; Spotify shows October 6. Google Maps' final UI read was blocked by browser timeouts and is still outstanding. These findings do not prove that no newer Duolingo reviews exist elsewhere. Do not claim the freshness issue is fixed or alter source dates to make the data look fresh.
+October 7: Duolingo's first three visible IDs match the run and show September 27; Spotify shows October 6. Google Maps' initial UI reads timed out, but a later manual session successfully verified the first five visible dates under Newest as October 6. Both store-page controls now agree at day precision with the collector. These findings do not prove that no newer Duolingo reviews exist elsewhere. Do not claim the freshness issue is fixed or alter source dates to make the data look fresh.
 
 Keep raw review text and the operational database local. Publish aggregate reports and findings only. Do not enable scheduling or send John a completion email until the actual remaining observations and review are done.
