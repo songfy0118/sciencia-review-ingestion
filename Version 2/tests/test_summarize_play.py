@@ -11,6 +11,7 @@ def report(key, at, count=100):
                    new_records=99, repeated_records=1, changed_records=1, unchanged_records=0,
                    stale_records=0, accepted_records=100, unclassified_pages=0)],
         evaluation={'apps': [dict(app_id='com.example.app', sample_collected_at=at,
+            pages=2, status='paused',
             unique_reviews_in_run=100, newest_returned_review='2026-09-27T00:00:00Z',
             newest_review_age_days_at_collection=10, warnings=['stale source'])]})]}
 
@@ -51,3 +52,65 @@ class SummaryTests(unittest.TestCase):
     def test_naive_date_rejected_instead_of_using_machine_timezone(self):
         with self.assertRaises(ValueError):
             summarize([report('a', '2026-10-07T10:00:00')])
+
+    def test_real_intervals_and_missing_days(self):
+        result = summarize([report('a', '2026-10-07T20:00:00Z'),
+                            report('b', '2026-10-08T05:00:00Z'),
+                            report('c', '2026-10-10T05:00:00Z')])['coverage'][0]
+        self.assertEqual([i['hours'] for i in result['intervals']], [9, 48])
+        self.assertEqual(result['missing_days_utc'], ['2026-10-09'])
+        self.assertFalse(result['near_daily_intervals'])
+
+    def test_chronology_uses_instants_not_timezone_strings(self):
+        result = summarize([report('later', '2026-10-08T01:00:00-05:00'),
+                            report('earlier', '2026-10-08T05:00:00Z')])
+        self.assertEqual([r['run_id'] for r in result['rows']], ['earlier', 'later'])
+        self.assertEqual(result['coverage'][0]['intervals'][0]['hours'], 1)
+
+    def test_missing_evidence_and_conflicting_counts_fail_closed(self):
+        for field, value in [('pages', 1), ('status', 'failed'),
+                             ('unique_reviews_in_run', 101), ('newest_returned_review', None)]:
+            item = report('a', '2026-10-07T10:00:00Z')
+            item['runs'][0]['evaluation']['apps'][0][field] = value
+            self.assertFalse(summarize([item])['rows'][0]['valid_collection'])
+
+    def test_negative_counts_cannot_cancel_each_other(self):
+        item = report('a', '2026-10-07T10:00:00Z')
+        item['runs'][0]['apps'][0].update(new_records=101, repeated_records=-1,
+                                         changed_records=-1)
+        self.assertFalse(summarize([item])['rows'][0]['accounting_ok'])
+
+    def test_no_overlap_is_separate_from_storage_success(self):
+        item = report('a', '2026-10-07T10:00:00Z')
+        evidence = item['runs'][0]['evaluation']['apps'][0]
+        evidence.update(warnings=[], comparison={'shared_ids_in_window': 0})
+        row = summarize([item])['rows'][0]
+        self.assertTrue(row['valid_collection'])
+        self.assertFalse(row['source_quality_ok'])
+        self.assertTrue(any('continuity' in w for w in row['warnings']))
+        evidence['comparison']['shared_ids_in_window'] = 1
+        self.assertTrue(summarize([item])['rows'][0]['source_quality_ok'])
+
+    def test_overlap_mode_and_duplicate_apps(self):
+        first = report('a', '2026-10-07T10:00:00Z')
+        second = report('b', '2026-10-08T10:00:00Z')
+        second['runs'][0]['config']['overlap_run'] = 'a'
+        self.assertEqual(len(summarize([first, second])['coverage']), 2)
+        first['runs'][0]['apps'] *= 2
+        with self.assertRaises(ValueError):
+            summarize([first])
+
+    def test_invalid_naive_or_future_review_date_does_not_count(self):
+        for newest in ('not-a-date', '2026-09-27T00:00:00',
+                       '2026-10-08T00:00:00Z', 123):
+            item = report('a', '2026-10-07T10:00:00Z')
+            item['runs'][0]['evaluation']['apps'][0]['newest_returned_review'] = newest
+            result = summarize([item])
+            self.assertFalse(result['rows'][0]['valid_collection'])
+            self.assertEqual(result['coverage'][0]['valid_days_utc'], [])
+
+    def test_duplicate_evaluation_app_rejected(self):
+        item = report('a', '2026-10-07T10:00:00Z')
+        item['runs'][0]['evaluation']['apps'] *= 2
+        with self.assertRaisesRegex(ValueError, 'within evaluation'):
+            summarize([item])
