@@ -1,0 +1,439 @@
+{
+  "schema_version": 2,
+  "runs": [
+    {
+      "run_id": "199164ef-4741-4db4-a698-dd0afeaf1ffb",
+      "source": "google_play",
+      "config": {
+        "apps": [
+          {
+            "app_id": "com.spotify.music",
+            "label": "Spotify"
+          },
+          {
+            "app_id": "com.duolingo",
+            "label": "Duolingo"
+          },
+          {
+            "app_id": "com.google.android.apps.maps",
+            "label": "Google Maps"
+          },
+          {
+            "app_id": "com.whatsapp",
+            "label": "WhatsApp"
+          },
+          {
+            "app_id": "com.netflix.mediaclient",
+            "label": "Netflix"
+          }
+        ],
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7"
+      },
+      "generated_at": "2026-10-12T23:19:14.556521Z",
+      "status": "bounded_success",
+      "coverage": "bounded_sample_not_complete_history",
+      "apps": [
+        {
+          "app_id": "com.duolingo",
+          "label": "Duolingo",
+          "status": "paused",
+          "pages": 2,
+          "can_resume": true,
+          "error": null,
+          "storage_failures": [],
+          "overlap": null,
+          "raw_records": 200,
+          "accepted_records": 200,
+          "duplicates": 0,
+          "rejected_records": 0,
+          "new_records": 200,
+          "repeated_records": 0,
+          "classified_pages": 2,
+          "changed_records": 0,
+          "unchanged_records": 0,
+          "stale_records": 0,
+          "cross_page_duplicates": 0,
+          "unclassified_pages": 0
+        },
+        {
+          "app_id": "com.google.android.apps.maps",
+          "label": "Google Maps",
+          "status": "paused",
+          "pages": 2,
+          "can_resume": true,
+          "error": null,
+          "storage_failures": [],
+          "overlap": null,
+          "raw_records": 200,
+          "accepted_records": 200,
+          "duplicates": 0,
+          "rejected_records": 0,
+          "new_records": 199,
+          "repeated_records": 1,
+          "classified_pages": 2,
+          "changed_records": 1,
+          "unchanged_records": 0,
+          "stale_records": 0,
+          "cross_page_duplicates": 0,
+          "unclassified_pages": 0
+        },
+        {
+          "app_id": "com.netflix.mediaclient",
+          "label": "Netflix",
+          "status": "paused",
+          "pages": 2,
+          "can_resume": true,
+          "error": null,
+          "storage_failures": [],
+          "overlap": null,
+          "raw_records": 200,
+          "accepted_records": 200,
+          "duplicates": 0,
+          "rejected_records": 0,
+          "new_records": 199,
+          "repeated_records": 1,
+          "classified_pages": 2,
+          "changed_records": 1,
+          "unchanged_records": 0,
+          "stale_records": 0,
+          "cross_page_duplicates": 0,
+          "unclassified_pages": 0
+        },
+        {
+          "app_id": "com.spotify.music",
+          "label": "Spotify",
+          "status": "paused",
+          "pages": 2,
+          "can_resume": true,
+          "error": null,
+          "storage_failures": [],
+          "overlap": null,
+          "raw_records": 200,
+          "accepted_records": 200,
+          "duplicates": 0,
+          "rejected_records": 0,
+          "new_records": 200,
+          "repeated_records": 0,
+          "classified_pages": 2,
+          "changed_records": 0,
+          "unchanged_records": 0,
+          "stale_records": 0,
+          "cross_page_duplicates": 0,
+          "unclassified_pages": 0
+        },
+        {
+          "app_id": "com.whatsapp",
+          "label": "WhatsApp",
+          "status": "paused",
+          "pages": 2,
+          "can_resume": true,
+          "error": null,
+          "storage_failures": [],
+          "overlap": null,
+          "raw_records": 200,
+          "accepted_records": 200,
+          "duplicates": 0,
+          "rejected_records": 0,
+          "new_records": 200,
+          "repeated_records": 0,
+          "classified_pages": 2,
+          "changed_records": 0,
+          "unchanged_records": 0,
+          "stale_records": 0,
+          "cross_page_duplicates": 0,
+          "unclassified_pages": 0
+        }
+      ],
+      "database_integrity_check": "ok",
+      "foreign_key_issues": 0,
+      "unique_reviews_in_database": 7608,
+      "observations_in_run": 1000,
+      "failed_attempts": 0,
+      "verification_status": "passed",
+      "evaluation": {
+        "run_id": "199164ef-4741-4db4-a698-dd0afeaf1ffb",
+        "generated_at": "2026-10-12T23:19:14.583522Z",
+        "apps": [
+          {
+            "app_id": "com.duolingo",
+            "label": "Duolingo",
+            "status": "paused",
+            "pages": 2,
+            "unique_reviews_in_run": 200,
+            "sample_collected_at": "2026-10-12T23:18:59.200030Z",
+            "newest_returned_review": "2026-10-11T23:15:16Z",
+            "newest_review_age_days_at_collection": 1.0,
+            "adjacent_timestamp_inversions": 0,
+            "transport_recorded_pages": 2,
+            "http_clock_deltas_seconds": [
+              -6.389151,
+              -5.825971
+            ],
+            "comparison": {
+              "previous_run_id": "b5b163f6-f8da-4e5a-8bb0-b76c36043f6d",
+              "hours_between_samples": 64.61,
+              "shared_ids_in_window": 0,
+              "previous_newest_returned_review": "2026-10-09T06:40:37Z",
+              "newest_timestamp_change_seconds": 232479.0,
+              "new_ids_in_window": 200,
+              "ids_no_longer_in_window": 200,
+              "changed_text_rating_or_reply": 0,
+              "id_jaccard": 0.0
+            },
+            "warnings": []
+          },
+          {
+            "app_id": "com.google.android.apps.maps",
+            "label": "Google Maps",
+            "status": "paused",
+            "pages": 2,
+            "unique_reviews_in_run": 200,
+            "sample_collected_at": "2026-10-12T23:19:04.143698Z",
+            "newest_returned_review": "2026-10-11T23:18:09Z",
+            "newest_review_age_days_at_collection": 1.0,
+            "adjacent_timestamp_inversions": 0,
+            "transport_recorded_pages": 2,
+            "http_clock_deltas_seconds": [
+              -6.411254,
+              -5.877344
+            ],
+            "comparison": {
+              "previous_run_id": "b5b163f6-f8da-4e5a-8bb0-b76c36043f6d",
+              "hours_between_samples": 64.61,
+              "shared_ids_in_window": 1,
+              "previous_newest_returned_review": "2026-10-09T06:42:02Z",
+              "newest_timestamp_change_seconds": 232567.0,
+              "new_ids_in_window": 199,
+              "ids_no_longer_in_window": 199,
+              "changed_text_rating_or_reply": 1,
+              "id_jaccard": 0.0025
+            },
+            "warnings": []
+          },
+          {
+            "app_id": "com.netflix.mediaclient",
+            "label": "Netflix",
+            "status": "paused",
+            "pages": 2,
+            "unique_reviews_in_run": 200,
+            "sample_collected_at": "2026-10-12T23:19:14.455013Z",
+            "newest_returned_review": "2026-10-11T23:16:43Z",
+            "newest_review_age_days_at_collection": 1.0,
+            "adjacent_timestamp_inversions": 0,
+            "transport_recorded_pages": 2,
+            "http_clock_deltas_seconds": [
+              -6.056339,
+              -6.566987
+            ],
+            "comparison": {
+              "previous_run_id": "b5b163f6-f8da-4e5a-8bb0-b76c36043f6d",
+              "hours_between_samples": 64.61,
+              "shared_ids_in_window": 0,
+              "previous_newest_returned_review": "2026-10-09T06:40:42Z",
+              "newest_timestamp_change_seconds": 232561.0,
+              "new_ids_in_window": 200,
+              "ids_no_longer_in_window": 200,
+              "changed_text_rating_or_reply": 0,
+              "id_jaccard": 0.0
+            },
+            "warnings": []
+          },
+          {
+            "app_id": "com.spotify.music",
+            "label": "Spotify",
+            "status": "paused",
+            "pages": 2,
+            "unique_reviews_in_run": 200,
+            "sample_collected_at": "2026-10-12T23:18:54.121791Z",
+            "newest_returned_review": "2026-10-11T23:14:09Z",
+            "newest_review_age_days_at_collection": 1.0,
+            "adjacent_timestamp_inversions": 0,
+            "transport_recorded_pages": 2,
+            "http_clock_deltas_seconds": [
+              -6.267834,
+              -6.900745
+            ],
+            "comparison": {
+              "previous_run_id": "b5b163f6-f8da-4e5a-8bb0-b76c36043f6d",
+              "hours_between_samples": 64.61,
+              "shared_ids_in_window": 0,
+              "previous_newest_returned_review": "2026-10-09T06:40:29Z",
+              "newest_timestamp_change_seconds": 232420.0,
+              "new_ids_in_window": 200,
+              "ids_no_longer_in_window": 200,
+              "changed_text_rating_or_reply": 0,
+              "id_jaccard": 0.0
+            },
+            "warnings": []
+          },
+          {
+            "app_id": "com.whatsapp",
+            "label": "WhatsApp",
+            "status": "paused",
+            "pages": 2,
+            "unique_reviews_in_run": 200,
+            "sample_collected_at": "2026-10-12T23:19:09.513970Z",
+            "newest_returned_review": "2026-10-11T23:18:16Z",
+            "newest_review_age_days_at_collection": 1.0,
+            "adjacent_timestamp_inversions": 0,
+            "transport_recorded_pages": 2,
+            "http_clock_deltas_seconds": [
+              -6.114735,
+              -6.509035
+            ],
+            "comparison": {
+              "previous_run_id": "b5b163f6-f8da-4e5a-8bb0-b76c36043f6d",
+              "hours_between_samples": 64.61,
+              "shared_ids_in_window": 0,
+              "previous_newest_returned_review": "2026-10-09T06:42:04Z",
+              "newest_timestamp_change_seconds": 232572.0,
+              "new_ids_in_window": 200,
+              "ids_no_longer_in_window": 200,
+              "changed_text_rating_or_reply": 0,
+              "id_jaccard": 0.0
+            },
+            "warnings": []
+          }
+        ],
+        "recommendation": "continue_bounded_evaluation",
+        "limitations": [
+          "A changed or unchanged bounded window does not prove historical completeness.",
+          "IDs leaving a window are not evidence of deleted reviews.",
+          "Seven days is a diagnostic threshold, not a promised freshness requirement."
+        ]
+      },
+      "storage_audit": {
+        "generated_at": "2026-10-12T23:19:14.902050Z",
+        "integrity": "ok",
+        "foreign_key_issues": 0,
+        "committed_pages": 98,
+        "source_records_seen": 9800,
+        "unique_reviews": 7608,
+        "snapshot_backed_unique_reviews": 7608,
+        "snapshot_mismatches": 0,
+        "count_issues": [],
+        "apps": [
+          {
+            "app_id": "com.duolingo",
+            "unique_reviews": 1297,
+            "oldest_review": "2026-09-01T17:09:05Z",
+            "newest_review": "2026-10-11T23:15:16Z",
+            "newest_review_age_days": 1.0,
+            "freshness_warning": null,
+            "comparable_run_ids": [
+              "199164ef-4741-4db4-a698-dd0afeaf1ffb",
+              "b5b163f6-f8da-4e5a-8bb0-b76c36043f6d"
+            ],
+            "comparison_parameters": {
+              "pages": 2,
+              "lang": "en",
+              "country": "us",
+              "count": 100,
+              "sort": "NEWEST",
+              "adapter": "strict-single-page-v2",
+              "package": "1.2.7"
+            },
+            "review_id_jaccard": 0.0
+          },
+          {
+            "app_id": "com.google.android.apps.maps",
+            "unique_reviews": 1315,
+            "oldest_review": "2026-09-28T05:22:56Z",
+            "newest_review": "2026-10-11T23:18:09Z",
+            "newest_review_age_days": 1.0,
+            "freshness_warning": null,
+            "comparable_run_ids": [
+              "199164ef-4741-4db4-a698-dd0afeaf1ffb",
+              "b5b163f6-f8da-4e5a-8bb0-b76c36043f6d"
+            ],
+            "comparison_parameters": {
+              "pages": 2,
+              "lang": "en",
+              "country": "us",
+              "count": 100,
+              "sort": "NEWEST",
+              "adapter": "strict-single-page-v2",
+              "package": "1.2.7"
+            },
+            "review_id_jaccard": 0.0025
+          },
+          {
+            "app_id": "com.netflix.mediaclient",
+            "unique_reviews": 1624,
+            "oldest_review": "2026-09-28T10:37:42Z",
+            "newest_review": "2026-10-11T23:16:43Z",
+            "newest_review_age_days": 1.0,
+            "freshness_warning": null,
+            "comparable_run_ids": [
+              "199164ef-4741-4db4-a698-dd0afeaf1ffb",
+              "b5b163f6-f8da-4e5a-8bb0-b76c36043f6d"
+            ],
+            "comparison_parameters": {
+              "pages": 2,
+              "lang": "en",
+              "country": "us",
+              "count": 100,
+              "sort": "NEWEST",
+              "adapter": "strict-single-page-v2",
+              "package": "1.2.7"
+            },
+            "review_id_jaccard": 0.0
+          },
+          {
+            "app_id": "com.spotify.music",
+            "unique_reviews": 1669,
+            "oldest_review": "2026-09-28T15:32:24Z",
+            "newest_review": "2026-10-11T23:14:09Z",
+            "newest_review_age_days": 1.0,
+            "freshness_warning": null,
+            "comparable_run_ids": [
+              "199164ef-4741-4db4-a698-dd0afeaf1ffb",
+              "b5b163f6-f8da-4e5a-8bb0-b76c36043f6d"
+            ],
+            "comparison_parameters": {
+              "pages": 2,
+              "lang": "en",
+              "country": "us",
+              "count": 100,
+              "sort": "NEWEST",
+              "adapter": "strict-single-page-v2",
+              "package": "1.2.7"
+            },
+            "review_id_jaccard": 0.0
+          },
+          {
+            "app_id": "com.whatsapp",
+            "unique_reviews": 1703,
+            "oldest_review": "2026-09-28T19:19:27Z",
+            "newest_review": "2026-10-11T23:18:16Z",
+            "newest_review_age_days": 1.0,
+            "freshness_warning": null,
+            "comparable_run_ids": [
+              "199164ef-4741-4db4-a698-dd0afeaf1ffb",
+              "b5b163f6-f8da-4e5a-8bb0-b76c36043f6d"
+            ],
+            "comparison_parameters": {
+              "pages": 2,
+              "lang": "en",
+              "country": "us",
+              "count": 100,
+              "sort": "NEWEST",
+              "adapter": "strict-single-page-v2",
+              "package": "1.2.7"
+            },
+            "review_id_jaccard": 0.0
+          }
+        ],
+        "storage_checks_passed": true,
+        "coverage": "Bounded sample; storage checks cannot establish source completeness or freshness"
+      },
+      "verification_errors": {},
+      "source_quality_status": "bounded_checks_passed"
+    }
+  ]
+}
