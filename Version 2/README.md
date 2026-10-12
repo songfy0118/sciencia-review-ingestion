@@ -1,7 +1,8 @@
 # Version 2 — Google Play
 
 Current deliverable: controlled, repeated App-review ingestion into local SQLite.
-Start with the [John requirements and acceptance summary](docs/john-acceptance-2026-10-02.md).
+Start with the [current John requirements review](docs/john-progress-2026-10-12.md).
+The [October 2 acceptance summary](docs/john-acceptance-2026-10-02.md) is historical.
 No additional website work or unattended scheduling is part of this milestone.
 The [public data snapshot](datasets/2026-10-03/README.md) provides 3,798 contact-redacted
 reviews, a preview and a manifest. This is a static download, not the operational
@@ -14,8 +15,13 @@ an uploaded dataset or automatic mirroring.
 
 Current milestone: [controlled repeated ingestion](docs/controlled-ingestion.md).
 The [October 2 source-quality follow-up](docs/source-quality-2026-10-02.md) adds
-bounded catch-up and database quality assessments. The store now holds 3,798
-unique reviews; Duolingo freshness and three missing-overlap windows remain flagged.
+bounded catch-up and database quality assessments. At that time, the store held 3,798
+unique reviews and freshness/overlap warnings remained open.
+The latest completed controlled run is [October 10](docs/manual-freshness-2026-10-10.md):
+6,610 unique local reviews, with actual observation dates October 7, 8 and 10.
+Duolingo's newest returned date advanced in the last two runs; the delay's cause
+remains unknown. See the [enhanced summary](samples/john_multiday_quality_2026-10-10.json)
+for actual intervals and missing observation dates.
 See [September 29 results](docs/controlled-findings-2026-09-29.md): three live
 rounds, 3,000 observations, 1,003 unique stored reviews, with freshness still open.
 The [September 30 follow-up](docs/controlled-findings-2026-09-30.md) reused the
