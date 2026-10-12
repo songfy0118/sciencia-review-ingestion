@@ -17,10 +17,10 @@ Current milestone: [controlled repeated ingestion](docs/controlled-ingestion.md)
 The [October 2 source-quality follow-up](docs/source-quality-2026-10-02.md) adds
 bounded catch-up and database quality assessments. At that time, the store held 3,798
 unique reviews and freshness/overlap warnings remained open.
-The latest completed controlled run is [October 10](docs/manual-freshness-2026-10-10.md):
-6,610 unique local reviews, with actual observation dates October 7, 8 and 10.
-Duolingo's newest returned date advanced in the last two runs; the delay's cause
-remains unknown. See the [enhanced summary](samples/john_multiday_quality_2026-10-10.json)
+The latest completed controlled run is [October 12](docs/manual-freshness-2026-10-12.md):
+7,608 unique local reviews, with actual observation dates October 7, 8, 10 and 12.
+Duolingo's newest returned date advanced in the last three runs; the delay's cause
+remains unknown. See the [enhanced summary](samples/john_multiday_quality_2026-10-12.json)
 for actual intervals and missing observation dates.
 See [September 29 results](docs/controlled-findings-2026-09-29.md): three live
 rounds, 3,000 observations, 1,003 unique stored reviews, with freshness still open.
