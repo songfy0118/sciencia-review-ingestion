@@ -1,6 +1,6 @@
 # Manual multi-day follow-up protocol
 
-John's October 5 follow-up requires source freshness checks and repeated collections over a few days before adding a scheduler. Completed observations exist for October 7, 8 and 10. John did not prescribe three consecutive days or a fixed daily frequency. These experiments support a progress update, not proof of complete source coverage or scheduler readiness. See the [current requirements review](john-progress-2026-10-12.md).
+John's October 5 follow-up requires source freshness checks and repeated collections over a few days before adding a scheduler. Completed observations exist for October 7, 8, 10 and 12. John did not prescribe three consecutive days or a fixed daily frequency. These experiments support a progress update, not proof of complete source coverage or scheduler readiness. See the [current requirements review](john-progress-2026-10-12.md).
 
 ## Repeatable procedure
 
@@ -19,14 +19,14 @@ Collect on separate actual dates, preferably near the same time. Never change th
 The new tool reads saved report files only, prints JSON, and does not collect, schedule, write to SQLite, or publish. Supply only reports that actually exist:
 
 ```powershell
-../.venv/Scripts/python.exe -m review_ingestion.summarize_play samples/google_play_controlled_2026-10-07.json samples/google_play_controlled_2026-10-08.json samples/google_play_controlled_2026-10-10.json
+../.venv/Scripts/python.exe -m review_ingestion.summarize_play samples/google_play_controlled_2026-10-07.json samples/google_play_controlled_2026-10-08.json samples/google_play_controlled_2026-10-10.json samples/google_play_controlled_2026-10-12.json
 ```
 
 Add each later completed report as another argument. A duplicate run ID is rejected, rather than silently counted twice. The tool uses saved sample timestamps, not report-generation time. Runs without timezone-aware timestamps are rejected. Failed runs, missing samples, failed verification and inconsistent accounting do not count toward valid collection days. Protocol differences, including actual page counts, create separate coverage groups.
 
 Each row includes new, repeated, updated, unchanged, stale, latest review date, age and source warnings. Updated is a subset of repeated, not an additional observation. A valid collection day means collection/accounting passed; it does not mean source freshness passed.
 
-See the [enhanced three-date summary](../samples/john_multiday_quality_2026-10-10.json) and [latest store comparison](manual-freshness-2026-10-10.md). Each App has three valid observation dates, separated by about 9.21 and 48.79 hours, with October 9 missing. The longest consecutive UTC-date streak is two. Dates with no experiments are not filled in.
+See the [enhanced four-date summary](../samples/john_multiday_quality_2026-10-12.json), [latest collector observation](manual-freshness-2026-10-12.md) and [latest store comparison](manual-freshness-2026-10-10.md). Each App has four valid observation dates, separated by about 9.21, 48.79 and 64.61 hours, with October 9 and 11 missing. The longest consecutive UTC-date streak is two. Dates with no experiments are not filled in.
 
 ## Store control and interpretation
 
