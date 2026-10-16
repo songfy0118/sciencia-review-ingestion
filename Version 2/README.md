@@ -1,7 +1,9 @@
 # Version 2 — Google Play
 
 Current deliverable: bounded incremental App-review catch-up into local SQLite.
-Start with the [October 16 implementation and test results](docs/incremental-catchup-2026-10-16.md).
+Start with the [completed Duolingo catch-up and latest tests](docs/duolingo-catchup-completed-2026-10-16.md).
+The [initial October 16 implementation and results](docs/incremental-catchup-2026-10-16.md)
+preserve the earlier capped experiment.
 The [October 12 requirements review](docs/john-progress-2026-10-12.md) covers the earlier fixed-window milestone.
 The [October 2 acceptance summary](docs/john-acceptance-2026-10-02.md) is historical.
 No additional website work or unattended scheduling is part of this milestone.
@@ -16,9 +18,11 @@ an uploaded dataset or automatic mirroring.
 
 Current milestone: [incremental catch-up](docs/incremental-catchup-2026-10-16.md),
 using existing database IDs as stopping boundaries and a hard per-App page cap.
-The 32-request live experiment reached boundaries for Maps and Spotify;
-Duolingo remains unresolved at its approved ten-page cap. The experiment copy
-contains 9,606 unique reviews; the original database remains at 7,608.
+The initial 32-request experiment reached boundaries for Maps and Spotify.
+An explicitly authorized [Duolingo continuation](docs/duolingo-catchup-completed-2026-10-16.md)
+then reached its older target at page 42 of a 50-page cap, without refetching pages 1-10.
+A fresh Duolingo check stopped after one page. The experiment copy now
+contains 12,801 unique reviews; the original database remains at 7,608.
 Scheduler remains deferred. [Controlled repeated ingestion](docs/controlled-ingestion.md)
 documents the historical fixed-window mode.
 The [October 2 source-quality follow-up](docs/source-quality-2026-10-02.md) adds
