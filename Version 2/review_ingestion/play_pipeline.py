@@ -147,7 +147,8 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
              pages: int = 2, lang: str = "en", country: str = "us",
              delay: float = 2, timeout: float = 25, retries: int = 2,
              resume: str | None = None, overlap_run: str | None = None,
-             catch_up: bool = False, max_pages: int = 10, fetcher=fetch_page) -> dict:
+             catch_up: bool = False, max_pages: int = 10,
+             extend_max_pages: bool = False, fetcher=fetch_page) -> dict:
     if not apps or len({a["app_id"] for a in apps}) != len(apps):
         raise ValueError("Provide a non-empty list of distinct app IDs")
     for app in apps:
@@ -158,6 +159,8 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
         raise ValueError('max_pages must be an integer in 1..100')
     if catch_up and overlap_run:
         raise ValueError('Use catch_up or overlap_run, not both')
+    if extend_max_pages and not (resume and catch_up):
+        raise ValueError('Explicit page-cap extension requires a catch-up resume')
     if not math.isfinite(delay) or delay < 0 or not math.isfinite(timeout) or timeout <= 0:
         raise ValueError("Use finite nonnegative delay and positive timeout")
     if not (len(lang) == 2 and lang.isalpha() and len(country) == 2 and country.isalpha()):
@@ -193,7 +196,15 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
             config["overlap_run"] = overlap_run
         if resume:
             saved = connection.execute("SELECT report_json FROM collection_runs WHERE run_id=?", (run_id,)).fetchone()
-            if not saved or json.loads(saved[0]).get("config") != config:
+            saved_report = json.loads(saved[0]) if saved else {}
+            saved_config = saved_report.get('config', {})
+            if extend_max_pages:
+                if not saved_config.get('catch_up') or max_pages <= saved_config.get('max_pages', 100):
+                    raise ValueError('Explicit extension requires a higher catch-up page cap')
+                expected = saved_config | dict(max_pages=max_pages)
+            else:
+                expected = saved_config
+            if not saved or expected != config:
                 raise ValueError("Resume ID not found or app/locale/page-size configuration differs")
         else:
             with connection:
@@ -211,6 +222,13 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
         # stdout is reserved for JSON reports; this ID remains available after a crash.
         print(f"Run {run_id}: checkpoint database {db_path}", file=sys.stderr, flush=True)
         with connection:
+            if extend_max_pages:
+                extensions = saved_report.get('limit_extensions', []) + [dict(
+                    previous_max_pages=saved_config['max_pages'], new_max_pages=max_pages,
+                    extended_at=utc_now())]
+                connection.execute('''UPDATE collection_runs SET report_json=json_set(
+                    report_json,'$.config',json(?),'$.limit_extensions',json(?)) WHERE run_id=?''',
+                    (json.dumps(config), json.dumps(extensions), run_id))
             connection.execute("""UPDATE collection_runs SET status='running', completed_at='',
                 report_json=json_set(report_json,'$.generated_at',?) WHERE run_id=?""", (utc_now(), run_id))
             connection.execute('DELETE FROM play_source_assessments WHERE run_id=?', (run_id,))
@@ -443,6 +461,8 @@ def summarize(connection: sqlite3.Connection, run_id: str, config: dict) -> dict
     fk = connection.execute("PRAGMA foreign_key_check").fetchall()
     clean = all(a["status"] in ("paused", "source_end") and a["accepted_records"] > 0 and a["rejected_records"] == 0 for a in apps)
     return {"run_id": run_id, "source": "google_play", "config": config,
+            "limit_extensions": json.loads(connection.execute(
+                'SELECT report_json FROM collection_runs WHERE run_id=?', (run_id,)).fetchone()[0]).get('limit_extensions', []),
             "generated_at": utc_now(), "status": "bounded_success" if clean and integrity == "ok" and not fk else "needs_attention",
             "coverage": "bounded_sample_not_complete_history", "apps": apps,
             "database_integrity_check": integrity, "foreign_key_issues": len(fk),
