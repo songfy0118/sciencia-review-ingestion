@@ -114,3 +114,16 @@ class SummaryTests(unittest.TestCase):
         item['runs'][0]['evaluation']['apps'] *= 2
         with self.assertRaisesRegex(ValueError, 'within evaluation'):
             summarize([item])
+
+    def test_catchup_protocol_and_unresolved_boundary_stay_visible(self):
+        fixed = report('a', '2026-10-07T10:00:00Z')
+        catchup = report('b', '2026-10-08T10:00:00Z')
+        catchup['runs'][0]['config'].update(catch_up=True, max_pages=10)
+        catchup['runs'][0]['apps'][0]['catch_up'] = dict(gap_risk=True, stop_reason='page_limit')
+        catchup['runs'][0]['evaluation']['apps'][0]['warnings'] = []
+        result = summarize([fixed, catchup])
+        self.assertEqual(len(result['coverage']), 2)
+        row = result['rows'][1]
+        self.assertTrue(row['valid_collection'])
+        self.assertFalse(row['source_quality_ok'])
+        self.assertEqual(row['catch_up']['stop_reason'], 'page_limit')
