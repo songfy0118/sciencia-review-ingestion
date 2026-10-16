@@ -34,6 +34,7 @@ def load_apps(path: Path) -> list[dict[str, str]]:
 def assessment_status(report: dict, app: dict, evidence: dict | None) -> str:
     attention = (report['verification_status'] != 'passed' or
                  app['status'] not in ('paused', 'source_end') or evidence is None or
+                 bool(app.get('catch_up') and app['catch_up']['gap_risk']) or
                  bool(evidence['warnings']) or bool(app.get('overlap') and (
                      app['overlap']['gap_risk'] or app['overlap'].get('warnings'))))
     return 'needs_attention' if attention else 'bounded_checks_passed'
@@ -53,6 +54,7 @@ def persist_assessments(db: Path, report: dict) -> None:
                 report['run_id'], app['app_id'], utc_now(),
                 assessment_status(report, app, evidence),
                 json.dumps({'evaluation': evidence, 'overlap': app.get('overlap'),
+                            'catch_up': app.get('catch_up'),
                             'verification_errors': report.get('verification_errors', {})})))
 
 
@@ -63,7 +65,9 @@ def main() -> int:
     parser.add_argument("--report", required=True, type=Path)
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--count", type=int, default=50, help="Requested records per page (1..200)")
-    parser.add_argument("--pages", type=int, default=2, help="Additional pages per app in this invocation")
+    parser.add_argument("--pages", type=int, help="Additional pages per App in this invocation; default 2, or max-pages in catch-up mode")
+    parser.add_argument('--catch-up', action='store_true', help='Page backward until a pre-run database review ID is reached')
+    parser.add_argument('--max-pages', type=int, default=10, help='Catch-up total committed-page cap per App, including resume (1..100)')
     parser.add_argument("--delay", type=float, default=2, help="Seconds between page attempts")
     parser.add_argument("--interval", type=float, default=30, help="Seconds between repeated runs")
     parser.add_argument("--timeout", type=float, default=25)
@@ -73,6 +77,9 @@ def main() -> int:
     parser.add_argument("--resume", help="Resume a run ID printed by an earlier invocation")
     parser.add_argument("--overlap-run", help="Stop an App when a review ID from this matching baseline run is observed")
     args = parser.parse_args()
+    if args.catch_up and args.overlap_run:
+        parser.error('Use --catch-up or --overlap-run, not both')
+    page_budget = args.pages if args.pages is not None else args.max_pages if args.catch_up else 2
     if not 1 <= args.runs <= 20 or not math.isfinite(args.interval) or args.interval < 0:
         parser.error("runs must be 1..20; interval must be nonnegative")
     if args.resume and args.runs != 1:
@@ -85,10 +92,10 @@ def main() -> int:
     apps = load_apps(args.input)
     reports = []
     for index in range(args.runs):
-        report = run_once(apps=apps, db_path=args.db, count=args.count, pages=args.pages,
+        report = run_once(apps=apps, db_path=args.db, count=args.count, pages=page_budget,
                           lang=args.lang, country=args.country, delay=args.delay,
                           timeout=args.timeout, retries=args.retries, resume=args.resume,
-                          overlap_run=args.overlap_run)
+                          overlap_run=args.overlap_run, catch_up=args.catch_up, max_pages=args.max_pages)
         reports.append(report)
         report["verification_status"] = "pending"
         write_json(args.report, {"schema_version": 2, "runs": reports})
