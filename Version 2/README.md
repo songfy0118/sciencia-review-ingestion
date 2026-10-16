@@ -1,7 +1,8 @@
 # Version 2 — Google Play
 
-Current deliverable: controlled, repeated App-review ingestion into local SQLite.
-Start with the [current John requirements review](docs/john-progress-2026-10-12.md).
+Current deliverable: bounded incremental App-review catch-up into local SQLite.
+Start with the [October 16 implementation and test results](docs/incremental-catchup-2026-10-16.md).
+The [October 12 requirements review](docs/john-progress-2026-10-12.md) covers the earlier fixed-window milestone.
 The [October 2 acceptance summary](docs/john-acceptance-2026-10-02.md) is historical.
 No additional website work or unattended scheduling is part of this milestone.
 The [public data snapshot](datasets/2026-10-03/README.md) provides 3,798 contact-redacted
@@ -13,11 +14,17 @@ an uploaded dataset or automatic mirroring.
 
 ## Where to look
 
-Current milestone: [controlled repeated ingestion](docs/controlled-ingestion.md).
+Current milestone: [incremental catch-up](docs/incremental-catchup-2026-10-16.md),
+using existing database IDs as stopping boundaries and a hard per-App page cap.
+The 32-request live experiment reached boundaries for Maps and Spotify;
+Duolingo remains unresolved at its approved ten-page cap. The experiment copy
+contains 9,606 unique reviews; the original database remains at 7,608.
+Scheduler remains deferred. [Controlled repeated ingestion](docs/controlled-ingestion.md)
+documents the historical fixed-window mode.
 The [October 2 source-quality follow-up](docs/source-quality-2026-10-02.md) adds
 bounded catch-up and database quality assessments. At that time, the store held 3,798
 unique reviews and freshness/overlap warnings remained open.
-The latest completed controlled run is [October 12](docs/manual-freshness-2026-10-12.md):
+The latest fixed-window controlled run is [October 12](docs/manual-freshness-2026-10-12.md):
 7,608 unique local reviews, with actual observation dates October 7, 8, 10 and 12.
 Duolingo's newest returned date advanced in the last three runs; the delay's cause
 remains unknown. See the [enhanced summary](samples/john_multiday_quality_2026-10-12.json)
