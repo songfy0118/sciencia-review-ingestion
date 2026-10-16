@@ -56,6 +56,16 @@ CREATE TABLE IF NOT EXISTS play_page_transport (
  PRIMARY KEY(run_id, app_id, page),
  FOREIGN KEY(run_id, app_id, page) REFERENCES play_pages(run_id, app_id, page)
 );
+CREATE TABLE IF NOT EXISTS play_catchup_baseline (
+ run_id TEXT NOT NULL, app_id TEXT NOT NULL, review_id TEXT NOT NULL,
+ PRIMARY KEY(run_id, app_id, review_id),
+ FOREIGN KEY(run_id, app_id) REFERENCES play_jobs(run_id, app_id)
+);
+CREATE TABLE IF NOT EXISTS play_catchup_origins (
+ run_id TEXT NOT NULL, app_id TEXT NOT NULL, inherited_from_run TEXT NOT NULL,
+ PRIMARY KEY(run_id, app_id),
+ FOREIGN KEY(run_id, app_id) REFERENCES play_jobs(run_id, app_id)
+);
 BEGIN IMMEDIATE;
 DROP VIEW IF EXISTS latest_play_source_quality;
 CREATE VIEW latest_play_source_quality AS
@@ -136,13 +146,18 @@ def run_once(*, db_path: Path, **kwargs) -> dict:
 def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
              pages: int = 2, lang: str = "en", country: str = "us",
              delay: float = 2, timeout: float = 25, retries: int = 2,
-             resume: str | None = None, overlap_run: str | None = None, fetcher=fetch_page) -> dict:
+             resume: str | None = None, overlap_run: str | None = None,
+             catch_up: bool = False, max_pages: int = 10, fetcher=fetch_page) -> dict:
     if not apps or len({a["app_id"] for a in apps}) != len(apps):
         raise ValueError("Provide a non-empty list of distinct app IDs")
     for app in apps:
         validate_app_id(app["app_id"])
     if not 1 <= count <= 200 or not 1 <= pages <= 100 or not 0 <= retries <= 3:
         raise ValueError("count: 1..200; pages per invocation: 1..100; retries: 0..3")
+    if type(max_pages) is not int or not 1 <= max_pages <= 100:
+        raise ValueError('max_pages must be an integer in 1..100')
+    if catch_up and overlap_run:
+        raise ValueError('Use catch_up or overlap_run, not both')
     if not math.isfinite(delay) or delay < 0 or not math.isfinite(timeout) or timeout <= 0:
         raise ValueError("Use finite nonnegative delay and positive timeout")
     if not (len(lang) == 2 and lang.isalpha() and len(country) == 2 and country.isalpha()):
@@ -153,6 +168,8 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
     connection.executescript(SCHEMA)
     config = {"apps": apps, "lang": lang, "country": country, "count": count,
               "sort": "NEWEST", "adapter": "strict-single-page-v2", "package": "1.2.7"}
+    if catch_up:
+        config.update(catch_up=True, max_pages=max_pages)
     run_id = resume or str(uuid.uuid4())
     try:
         baseline_ids = {}
@@ -186,6 +203,11 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
                          report={"config": config})
                 connection.executemany("INSERT INTO play_jobs(run_id,app_id,label) VALUES(?,?,?)",
                                        [(run_id, a["app_id"], a["label"]) for a in apps])
+                if catch_up:
+                    # Freeze the boundary before any App writes. Resume must not
+                    # mistake IDs saved by this run for pre-existing coverage.
+                    for app in apps:
+                        freeze_catchup_baseline(connection, run_id, app['app_id'])
         # stdout is reserved for JSON reports; this ID remains available after a crash.
         print(f"Run {run_id}: checkpoint database {db_path}", file=sys.stderr, flush=True)
         with connection:
@@ -197,6 +219,8 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
             for _ in range(pages):
                 job = connection.execute("SELECT * FROM play_jobs WHERE run_id=? AND app_id=?", (run_id, app_id)).fetchone()
                 if job["status"] in ("source_end", "stalled", "quality_error"):
+                    break
+                if catch_up and (job['pages'] >= max_pages or catchup_boundary(connection, run_id, app_id)):
                     break
                 if overlap_run:
                     observed = {row[0] for row in connection.execute(
@@ -221,6 +245,8 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
                             raise SourceError("Invalid continuation token")
                         if not payload["records"]:
                             raise SourceError("Empty page: cannot distinguish source end from response change")
+                        if catch_up and len(payload['records']) > count:
+                            raise SourceError('Source returned more records than the requested page limit')
                     except SourceError as exc:
                         with connection:
                             connection.execute("INSERT INTO play_attempts(run_id,app_id,page,attempted_at,success,error,retryable) VALUES(?,?,?,?,0,?,?)",
@@ -311,6 +337,34 @@ def classify_existing(connection, reviews):
     return changed, unchanged, stale
 
 
+def catchup_boundary(connection, run_id, app_id):
+    return connection.execute('''SELECT count(*) FROM review_observations o
+        JOIN play_catchup_baseline b USING(run_id,app_id,review_id)
+        WHERE o.run_id=? AND o.app_id=?''', (run_id, app_id)).fetchone()[0]
+
+
+def freeze_catchup_baseline(connection, run_id, app_id):
+    prior = connection.execute('''SELECT r.run_id,r.report_json FROM collection_runs r
+        JOIN play_jobs j USING(run_id) WHERE j.app_id=? AND r.run_id<>?
+        AND json_extract(r.report_json,'$.config.catch_up')=1
+        ORDER BY COALESCE(json_extract(r.report_json,'$.generated_at'),r.started_at) DESC,r.rowid DESC
+        LIMIT 1''', (app_id, run_id)).fetchone()
+    if prior:
+        previous = next((a for a in json.loads(prior['report_json']).get('apps', [])
+                         if a['app_id'] == app_id), {})
+        if not previous.get('catch_up', {}).get('boundary_resolved', False):
+            # Do not turn a capped/failed run's partial new head into proof
+            # of catch-up. Preserve the older target across fresh runs too.
+            connection.execute('''INSERT INTO play_catchup_baseline
+                SELECT ?,app_id,review_id FROM play_catchup_baseline WHERE run_id=? AND app_id=?''',
+                (run_id, prior['run_id'], app_id))
+            connection.execute('INSERT INTO play_catchup_origins VALUES(?,?,?)',
+                               (run_id, app_id, prior['run_id']))
+            return
+    connection.execute('''INSERT INTO play_catchup_baseline
+        SELECT ?,app_id,review_id FROM reviews WHERE app_id=?''', (run_id, app_id))
+
+
 @contextmanager
 def page_transaction(connection, run_id, app_id, page):
     try:
@@ -363,9 +417,28 @@ def summarize(connection: sqlite3.Connection, run_id: str, config: dict) -> dict
         failures = [dict(row) for row in connection.execute(
             "SELECT page,failed_at,error FROM play_storage_failures WHERE run_id=? AND app_id=? ORDER BY id",
             (run_id, job["app_id"]))]
+        catchup = None
+        can_resume = job['status'] in ('paused', 'failed', 'pending')
+        if config.get('catch_up'):
+            shared = catchup_boundary(connection, run_id, job['app_id'])
+            baseline_count = connection.execute('''SELECT count(*) FROM play_catchup_baseline
+                WHERE run_id=? AND app_id=?''', (run_id, job['app_id'])).fetchone()[0]
+            clean_page = job['status'] in ('paused', 'source_end')
+            reason = (job['status'] if not clean_page else 'known_id_reached' if shared else
+                      'source_end' if job['status'] == 'source_end' else
+                      'page_limit' if job['pages'] >= config['max_pages'] else 'invocation_limit')
+            resolved = clean_page and (bool(shared) or job['status'] == 'source_end')
+            catchup = dict(stop_reason=reason, baseline_ids=baseline_count, known_ids_observed=shared,
+                           max_pages=config['max_pages'], max_requested_records=config['max_pages'] * config['count'],
+                           boundary_resolved=resolved, gap_risk=not resolved, complete_coverage=False)
+            origin = connection.execute('''SELECT inherited_from_run FROM play_catchup_origins
+                WHERE run_id=? AND app_id=?''', (run_id, job['app_id'])).fetchone()
+            catchup['inherited_from_run'] = origin[0] if origin else None
+            can_resume = can_resume and not resolved and job['pages'] < config['max_pages']
         apps.append({"app_id": job["app_id"], "label": job["label"], "status": job["status"],
-                     "pages": job["pages"], "can_resume": job["status"] in ("paused", "failed", "pending"),
-                     "error": job["error"], "storage_failures": failures, "overlap": overlap, **counts, **changes})
+                     "pages": job["pages"], "can_resume": can_resume,
+                     "error": job["error"], "storage_failures": failures, "overlap": overlap,
+                     "catch_up": catchup, **counts, **changes})
     integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
     fk = connection.execute("PRAGMA foreign_key_check").fetchall()
     clean = all(a["status"] in ("paused", "source_end") and a["accepted_records"] > 0 and a["rejected_records"] == 0 for a in apps)
