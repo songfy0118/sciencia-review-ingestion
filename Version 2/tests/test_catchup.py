@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from review_ingestion.audit_play import audit
 from review_ingestion.google_play import utc_now
-from review_ingestion.google_play_cli import assessment_status, main
+from review_ingestion.google_play_cli import assessment_status, main, persist_assessments
 from review_ingestion.play_pipeline import SourceError, run_once
 
 
@@ -104,6 +104,46 @@ class CatchupTests(unittest.TestCase):
             self.assertEqual(app['catch_up']['stop_reason'], 'source_end')
             self.assertTrue(app['catch_up']['boundary_resolved'])
         self.assertEqual(result['unique_reviews_in_database'], 3)
+
+    def test_explicit_extension_keeps_cursor_boundary_and_audit_history(self):
+        self.seed(1)
+        args = self.args | dict(apps=self.apps[:1], max_pages=1)
+        first = run_once(**args, fetcher=lambda **_: dict(records=[record('new')], cursor='saved-cursor'))
+        first.update(verification_status='passed', evaluation=dict(apps=[dict(
+            app_id=self.apps[0]['app_id'], warnings=[])]))
+        persist_assessments(self.db, first)
+        self.assertEqual(self.query('SELECT count(*) FROM play_source_assessments'), [(1,)])
+        seen = []
+        def fetch(**request):
+            seen.append(request['cursor'])
+            self.assertEqual(self.query('SELECT count(*) FROM play_source_assessments'), [(0,)])
+            return dict(records=[record('old-0')], cursor='after-boundary')
+        result = run_once(**(args | dict(max_pages=3)), resume=first['run_id'],
+                          extend_max_pages=True, fetcher=fetch)
+        self.assertEqual(seen, ['saved-cursor'])
+        app = result['apps'][0]
+        self.assertEqual(app['pages'], 2)
+        self.assertEqual(app['catch_up']['baseline_ids'], 1)
+        self.assertTrue(app['catch_up']['boundary_resolved'])
+        history = result['limit_extensions']
+        self.assertEqual((history[0]['previous_max_pages'], history[0]['new_max_pages']), (1, 3))
+        again = run_once(**(args | dict(max_pages=3)), resume=first['run_id'],
+                         fetcher=lambda **_: self.fail('Boundary already reached'))
+        self.assertEqual(again['limit_extensions'], history)
+
+    def test_explicit_extension_cannot_change_other_configuration_or_shrink(self):
+        self.seed(1)
+        args = self.args | dict(apps=self.apps[:1], max_pages=1)
+        first = run_once(**args, fetcher=lambda **_: dict(records=[record('new')], cursor='next'))
+        for changes in (dict(max_pages=1), dict(max_pages=3, country='gb'), dict(max_pages=3, count=50)):
+            with self.assertRaises(ValueError):
+                run_once(**(args | changes), resume=first['run_id'], extend_max_pages=True,
+                         fetcher=lambda **_: self.fail('Invalid extension fetched data'))
+        with self.assertRaisesRegex(ValueError, 'requires a catch-up resume'):
+            run_once(**args, extend_max_pages=True)
+        with self.assertRaisesRegex(ValueError, 'requires a catch-up resume'):
+            run_once(**(args | dict(catch_up=False)), resume=first['run_id'], extend_max_pages=True)
+        self.assertEqual(self.query('SELECT pages FROM play_jobs WHERE run_id=?', (first['run_id'],)), [(1,)])
 
     def test_fresh_run_cannot_hide_prior_cap_behind_partial_new_head(self):
         self.seed(1)
@@ -200,3 +240,29 @@ class CatchupTests(unittest.TestCase):
         self.assertTrue(calls[0]['catch_up'])
         stored = self.query('SELECT report_json FROM play_source_assessments')
         self.assertTrue(all(json.loads(row[0])['catch_up']['boundary_resolved'] for row in stored))
+
+    def test_cli_explicit_extension_preserves_cap_history(self):
+        self.seed(1)
+        review_time = utc_now()
+        first = run_once(**(self.args | dict(max_pages=1)),
+                         fetcher=lambda **_: dict(records=[record('new', at=review_time)], cursor='saved'))
+        root = Path(self.folder.name)
+        config = root / 'apps.json'
+        config.write_text(json.dumps(self.apps))
+        destination = root / 'extended.json'
+        seen = []
+        def collect(**kwargs):
+            def fetch(**r):
+                seen.append(r['cursor'])
+                return dict(records=[record('old-0', at=review_time)], cursor='after')
+            return run_once(**kwargs, fetcher=fetch)
+        argv = ['collect', '--input', str(config), '--db', str(self.db), '--report', str(destination),
+                '--resume', first['run_id'], '--catch-up', '--extend-max-pages', '--max-pages', '3',
+                '--count', '100', '--pages', '2', '--delay', '0', '--retries', '0']
+        with patch('sys.argv', argv), patch('review_ingestion.google_play_cli.run_once', side_effect=collect), redirect_stdout(StringIO()):
+            code = main()
+        self.assertEqual(code, 0, json.loads(destination.read_text())['runs'][0].get('evaluation'))
+        result = json.loads(destination.read_text())['runs'][0]
+        self.assertEqual(seen, ['saved'] * 3)
+        self.assertEqual(result['limit_extensions'][0]['new_max_pages'], 3)
+        self.assertTrue(result['storage_audit']['storage_checks_passed'])
