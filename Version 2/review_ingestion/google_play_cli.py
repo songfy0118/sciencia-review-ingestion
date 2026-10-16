@@ -68,6 +68,7 @@ def main() -> int:
     parser.add_argument("--pages", type=int, help="Additional pages per App in this invocation; default 2, or max-pages in catch-up mode")
     parser.add_argument('--catch-up', action='store_true', help='Page backward until a pre-run database review ID is reached')
     parser.add_argument('--max-pages', type=int, default=10, help='Catch-up total committed-page cap per App, including resume (1..100)')
+    parser.add_argument('--extend-max-pages', action='store_true', help='Explicitly raise the cap of a catch-up resume while retaining its cursor and ID boundary')
     parser.add_argument("--delay", type=float, default=2, help="Seconds between page attempts")
     parser.add_argument("--interval", type=float, default=30, help="Seconds between repeated runs")
     parser.add_argument("--timeout", type=float, default=25)
@@ -79,6 +80,8 @@ def main() -> int:
     args = parser.parse_args()
     if args.catch_up and args.overlap_run:
         parser.error('Use --catch-up or --overlap-run, not both')
+    if args.extend_max_pages and not (args.resume and args.catch_up):
+        parser.error('--extend-max-pages requires --resume and --catch-up')
     page_budget = args.pages if args.pages is not None else args.max_pages if args.catch_up else 2
     if not 1 <= args.runs <= 20 or not math.isfinite(args.interval) or args.interval < 0:
         parser.error("runs must be 1..20; interval must be nonnegative")
@@ -95,7 +98,8 @@ def main() -> int:
         report = run_once(apps=apps, db_path=args.db, count=args.count, pages=page_budget,
                           lang=args.lang, country=args.country, delay=args.delay,
                           timeout=args.timeout, retries=args.retries, resume=args.resume,
-                          overlap_run=args.overlap_run, catch_up=args.catch_up, max_pages=args.max_pages)
+                          overlap_run=args.overlap_run, catch_up=args.catch_up, max_pages=args.max_pages,
+                          extend_max_pages=args.extend_max_pages)
         reports.append(report)
         report["verification_status"] = "pending"
         write_json(args.report, {"schema_version": 2, "runs": reports})
