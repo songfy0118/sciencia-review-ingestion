@@ -55,6 +55,9 @@ def summarize(reports: list[dict]) -> dict:
                          bool(observed) and evidence_ok and accounting_ok)
                 warnings = list(evidence.get('warnings', []))
                 comparison = evidence.get('comparison')
+                catchup = app.get('catch_up')
+                if catchup and catchup.get('gap_risk'):
+                    warnings.append('Catch-up boundary unresolved; inspect stop reason and limits')
                 if comparison and comparison.get('shared_ids_in_window') == 0:
                     warnings.append('No overlap with previous bounded window; continuity is unverified')
                 rows.append(dict(run_id=run['run_id'], app_id=app['app_id'], label=app['label'],
@@ -67,8 +70,11 @@ def summarize(reports: list[dict]) -> dict:
                     newest_review=evidence.get('newest_returned_review'),
                     age_days=evidence.get('newest_review_age_days_at_collection'),
                     warnings=warnings,
+                    catch_up=catchup,
                     protocol={**{k: config.get(k) for k in ('lang', 'country', 'count', 'sort', 'adapter', 'package')},
-                              'overlap_run': config.get('overlap_run')},
+                              'overlap_run': config.get('overlap_run'),
+                              'catch_up': config.get('catch_up', False),
+                              'max_pages': config.get('max_pages')},
                     pages=app['pages']))
     rows.sort(key=lambda r: (timestamp(r['observed_at']).timestamp() if r['observed_at'] else float('-inf'),
                              r['app_id'], r['run_id']))
