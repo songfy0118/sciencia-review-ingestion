@@ -1,5 +1,9 @@
 # October 16: bounded incremental catch-up
 
+Follow-up: the initially capped Duolingo target was subsequently reached on page 42
+after an explicitly authorized cap extension. See the [closure report and latest tests](duolingo-catchup-completed-2026-10-16.md).
+The live tables and 114-test result below preserve the initial experiment; they are not the latest state.
+
 ## Requirement and implementation
 
 John's October 16 reply asks for recurring collection that pages backward until an already stored review ID is reached, subject to a page or record cap, followed by multi-App tests for missed reviews, duplicates and excessive old-data retrieval. Scheduler remains deferred. No deadline was stated.
@@ -10,7 +14,7 @@ The Python workflow now offers `--catch-up --max-pages N`. The historical fixed-
 - Fetch NEWEST pages and save the entire boundary page, including any new IDs after the first known ID. Do not request another page once a pre-run ID is observed. This avoids discarding new reviews on a mixed page.
 - The database primary key and upsert path prevent duplicate rows and preserve field updates. Page snapshots, observations and cursor changes remain atomic.
 - The page cap is total per App per run, including resumes. With page size 100 and a 10-page cap, each App can commit at most 1,000 returned records; oversized responses are rejected. Retries are separately bounded; the validation used zero.
-- A paused/failed run can resume from its saved cursor only while below its original total cap. Resume must use the same configuration and cannot silently increase the cap.
+- Ordinary resume retains its existing total cap and configuration. A subsequently added explicit `--extend-max-pages` option permits a higher authorized cap while preserving cursor and baseline; it logs the limit change. See the closure report for its guards and tests.
 - A fresh catch-up run inherits the frozen target of the latest unresolved catch-up for each App. Partial data from a capped or failed attempt must not become a misleading new stopping boundary. `inherited_from_run` makes this visible.
 - Reports distinguish `known_id_reached`, `source_end`, `page_limit`, `invocation_limit` and failures. An unresolved boundary sets `gap_risk=true`, source quality needs_attention and a nonzero CLI exit, even if all writes pass verification.
 - Summary reporting separates catch-up/max-page protocols from historical fixed windows and retains unresolved-boundary warnings.
@@ -27,7 +31,7 @@ From Version 2, using the existing environment:
 
 The default catch-up invocation budget equals max-pages, not the legacy two pages. To intentionally pause earlier, add `--pages 2`; use `--resume RUN_ID` with identical App/locale/page-size/catch-up/cap settings to continue, while retaining the original total cap. Omit `--catch-up` only for explicitly fixed-window experiments.
 
-A reached hard cap is not retryable progress or completion. Re-running with the same insufficient cap can repeat the unresolved head. Review the gap before authorizing a separately bounded, larger-cap run; that new run retains the older target. Do not loop this automatically. Budget selection for a backlog is distinct from choosing a recurring collection frequency.
+A reached hard cap is not completion. Re-running with the same insufficient cap can repeat the unresolved head. After explicit authorization, prefer extending the existing catch-up run using `--resume`, `--catch-up`, `--extend-max-pages` and a higher `--max-pages` so the saved cursor is retained. Do not loop or raise limits automatically. Budget selection for a backlog is distinct from choosing a recurring collection frequency.
 
 ## Offline verification
 
