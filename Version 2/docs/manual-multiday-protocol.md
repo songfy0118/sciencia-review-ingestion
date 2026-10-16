@@ -1,5 +1,9 @@
 # Manual multi-day follow-up protocol
 
+This page preserves the earlier fixed-window experiment protocol. John's October 16 follow-up
+now calls for incremental catch-up before scheduling. Use the [new catch-up procedure and results](incremental-catchup-2026-10-16.md)
+for that development; do not treat the two-page command below as the recurring collection strategy.
+
 John's October 5 follow-up requires source freshness checks and repeated collections over a few days before adding a scheduler. Completed observations exist for October 7, 8, 10 and 12. John did not prescribe three consecutive days or a fixed daily frequency. These experiments support a progress update, not proof of complete source coverage or scheduler readiness. See the [current requirements review](john-progress-2026-10-12.md).
 
 ## Repeatable procedure
