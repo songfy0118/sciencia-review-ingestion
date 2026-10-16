@@ -1,0 +1,397 @@
+{
+  "date_basis": "UTC date of saved sample collection, not report generation",
+  "rows": [
+    {
+      "run_id": "e800e38f-209d-4258-8ff7-e29504c8ddb7",
+      "app_id": "com.duolingo",
+      "label": "Duolingo",
+      "observed_at": "2026-10-16T21:39:45.223445Z",
+      "day_utc": "2026-10-16",
+      "valid_collection": true,
+      "accepted": 1000,
+      "new": 1000,
+      "repeated": 0,
+      "updated": 0,
+      "unchanged": 0,
+      "stale": 0,
+      "accounting_ok": true,
+      "evidence_consistent": true,
+      "source_quality_ok": false,
+      "overlap_with_previous": null,
+      "newest_review": "2026-10-15T21:38:29Z",
+      "age_days": 1.0,
+      "warnings": [
+        "Catch-up boundary unresolved; inspect stop reason and limits"
+      ],
+      "catch_up": {
+        "stop_reason": "page_limit",
+        "baseline_ids": 1297,
+        "known_ids_observed": 0,
+        "max_pages": 10,
+        "max_requested_records": 1000,
+        "boundary_resolved": false,
+        "gap_risk": true,
+        "complete_coverage": false
+      },
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7",
+        "overlap_run": null,
+        "catch_up": true,
+        "max_pages": 10
+      },
+      "pages": 10
+    },
+    {
+      "run_id": "e800e38f-209d-4258-8ff7-e29504c8ddb7",
+      "app_id": "com.spotify.music",
+      "label": "Spotify",
+      "observed_at": "2026-10-16T21:40:03.566881Z",
+      "day_utc": "2026-10-16",
+      "valid_collection": true,
+      "accepted": 700,
+      "new": 699,
+      "repeated": 1,
+      "updated": 1,
+      "unchanged": 0,
+      "stale": 0,
+      "accounting_ok": true,
+      "evidence_consistent": true,
+      "source_quality_ok": true,
+      "overlap_with_previous": null,
+      "newest_review": "2026-10-15T21:37:39Z",
+      "age_days": 1.0,
+      "warnings": [],
+      "catch_up": {
+        "stop_reason": "known_id_reached",
+        "baseline_ids": 1669,
+        "known_ids_observed": 1,
+        "max_pages": 10,
+        "max_requested_records": 1000,
+        "boundary_resolved": true,
+        "gap_risk": false,
+        "complete_coverage": false
+      },
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7",
+        "overlap_run": null,
+        "catch_up": true,
+        "max_pages": 10
+      },
+      "pages": 7
+    },
+    {
+      "run_id": "e800e38f-209d-4258-8ff7-e29504c8ddb7",
+      "app_id": "com.google.android.apps.maps",
+      "label": "Google Maps",
+      "observed_at": "2026-10-16T21:40:11.862775Z",
+      "day_utc": "2026-10-16",
+      "valid_collection": true,
+      "accepted": 300,
+      "new": 298,
+      "repeated": 2,
+      "updated": 2,
+      "unchanged": 0,
+      "stale": 0,
+      "accounting_ok": true,
+      "evidence_consistent": true,
+      "source_quality_ok": true,
+      "overlap_with_previous": null,
+      "newest_review": "2026-10-15T21:18:38Z",
+      "age_days": 1.01,
+      "warnings": [],
+      "catch_up": {
+        "stop_reason": "known_id_reached",
+        "baseline_ids": 1315,
+        "known_ids_observed": 2,
+        "max_pages": 10,
+        "max_requested_records": 1000,
+        "boundary_resolved": true,
+        "gap_risk": false,
+        "complete_coverage": false
+      },
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7",
+        "overlap_run": null,
+        "catch_up": true,
+        "max_pages": 10
+      },
+      "pages": 3
+    },
+    {
+      "run_id": "160d6290-24e3-4861-8c1a-43022fabb774",
+      "app_id": "com.duolingo",
+      "label": "Duolingo",
+      "observed_at": "2026-10-16T21:41:30.779499Z",
+      "day_utc": "2026-10-16",
+      "valid_collection": true,
+      "accepted": 1000,
+      "new": 1,
+      "repeated": 999,
+      "updated": 0,
+      "unchanged": 999,
+      "stale": 0,
+      "accounting_ok": true,
+      "evidence_consistent": true,
+      "source_quality_ok": false,
+      "overlap_with_previous": 999,
+      "newest_review": "2026-10-15T21:40:56Z",
+      "age_days": 1.0,
+      "warnings": [
+        "Catch-up boundary unresolved; inspect stop reason and limits"
+      ],
+      "catch_up": {
+        "stop_reason": "page_limit",
+        "baseline_ids": 1297,
+        "known_ids_observed": 0,
+        "max_pages": 10,
+        "max_requested_records": 1000,
+        "boundary_resolved": false,
+        "gap_risk": true,
+        "complete_coverage": false,
+        "inherited_from_run": "e800e38f-209d-4258-8ff7-e29504c8ddb7"
+      },
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7",
+        "overlap_run": null,
+        "catch_up": true,
+        "max_pages": 10
+      },
+      "pages": 10
+    },
+    {
+      "run_id": "160d6290-24e3-4861-8c1a-43022fabb774",
+      "app_id": "com.spotify.music",
+      "label": "Spotify",
+      "observed_at": "2026-10-16T21:41:33.358420Z",
+      "day_utc": "2026-10-16",
+      "valid_collection": true,
+      "accepted": 100,
+      "new": 0,
+      "repeated": 100,
+      "updated": 0,
+      "unchanged": 100,
+      "stale": 0,
+      "accounting_ok": true,
+      "evidence_consistent": true,
+      "source_quality_ok": true,
+      "overlap_with_previous": null,
+      "newest_review": "2026-10-15T21:37:39Z",
+      "age_days": 1.0,
+      "warnings": [],
+      "catch_up": {
+        "stop_reason": "known_id_reached",
+        "baseline_ids": 2368,
+        "known_ids_observed": 100,
+        "max_pages": 10,
+        "max_requested_records": 1000,
+        "boundary_resolved": true,
+        "gap_risk": false,
+        "complete_coverage": false,
+        "inherited_from_run": null
+      },
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7",
+        "overlap_run": null,
+        "catch_up": true,
+        "max_pages": 10
+      },
+      "pages": 1
+    },
+    {
+      "run_id": "160d6290-24e3-4861-8c1a-43022fabb774",
+      "app_id": "com.google.android.apps.maps",
+      "label": "Google Maps",
+      "observed_at": "2026-10-16T21:41:35.986254Z",
+      "day_utc": "2026-10-16",
+      "valid_collection": true,
+      "accepted": 100,
+      "new": 0,
+      "repeated": 100,
+      "updated": 0,
+      "unchanged": 100,
+      "stale": 0,
+      "accounting_ok": true,
+      "evidence_consistent": true,
+      "source_quality_ok": true,
+      "overlap_with_previous": null,
+      "newest_review": "2026-10-15T21:18:38Z",
+      "age_days": 1.02,
+      "warnings": [],
+      "catch_up": {
+        "stop_reason": "known_id_reached",
+        "baseline_ids": 1613,
+        "known_ids_observed": 100,
+        "max_pages": 10,
+        "max_requested_records": 1000,
+        "boundary_resolved": true,
+        "gap_risk": false,
+        "complete_coverage": false,
+        "inherited_from_run": null
+      },
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7",
+        "overlap_run": null,
+        "catch_up": true,
+        "max_pages": 10
+      },
+      "pages": 1
+    }
+  ],
+  "coverage": [
+    {
+      "app_id": "com.duolingo",
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7",
+        "overlap_run": null,
+        "catch_up": true,
+        "max_pages": 10
+      },
+      "pages": 10,
+      "valid_days_utc": [
+        "2026-10-16"
+      ],
+      "longest_consecutive_days": 1,
+      "missing_days_utc": [],
+      "intervals": [
+        {
+          "previous_run_id": "e800e38f-209d-4258-8ff7-e29504c8ddb7",
+          "run_id": "160d6290-24e3-4861-8c1a-43022fabb774",
+          "hours": 0.03,
+          "near_daily_interval": false
+        }
+      ],
+      "near_daily_intervals": false
+    },
+    {
+      "app_id": "com.google.android.apps.maps",
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7",
+        "overlap_run": null,
+        "catch_up": true,
+        "max_pages": 10
+      },
+      "pages": 1,
+      "valid_days_utc": [
+        "2026-10-16"
+      ],
+      "longest_consecutive_days": 1,
+      "missing_days_utc": [],
+      "intervals": [],
+      "near_daily_intervals": false
+    },
+    {
+      "app_id": "com.google.android.apps.maps",
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7",
+        "overlap_run": null,
+        "catch_up": true,
+        "max_pages": 10
+      },
+      "pages": 3,
+      "valid_days_utc": [
+        "2026-10-16"
+      ],
+      "longest_consecutive_days": 1,
+      "missing_days_utc": [],
+      "intervals": [],
+      "near_daily_intervals": false
+    },
+    {
+      "app_id": "com.spotify.music",
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7",
+        "overlap_run": null,
+        "catch_up": true,
+        "max_pages": 10
+      },
+      "pages": 1,
+      "valid_days_utc": [
+        "2026-10-16"
+      ],
+      "longest_consecutive_days": 1,
+      "missing_days_utc": [],
+      "intervals": [],
+      "near_daily_intervals": false
+    },
+    {
+      "app_id": "com.spotify.music",
+      "protocol": {
+        "lang": "en",
+        "country": "us",
+        "count": 100,
+        "sort": "NEWEST",
+        "adapter": "strict-single-page-v2",
+        "package": "1.2.7",
+        "overlap_run": null,
+        "catch_up": true,
+        "max_pages": 10
+      },
+      "pages": 7,
+      "valid_days_utc": [
+        "2026-10-16"
+      ],
+      "longest_consecutive_days": 1,
+      "missing_days_utc": [],
+      "intervals": [],
+      "near_daily_intervals": false
+    }
+  ],
+  "limitations": [
+    "Same-day runs count as one day; parameter changes form separate groups.",
+    "20-28 hours is a reporting diagnostic, not an approved collection frequency.",
+    "Missing days are absence of valid observations, not proof that no attempt occurred.",
+    "A valid collection can still have freshness warnings; inspect warnings.",
+    "New means new to this database; updated is a subset of repeated.",
+    "Coverage does not establish source completeness or scheduler readiness."
+  ]
+}
