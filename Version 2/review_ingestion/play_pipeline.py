@@ -234,11 +234,13 @@ def _run_once(*, apps: list[dict], db_path: Path, count: int = 50,
             connection.execute('DELETE FROM play_source_assessments WHERE run_id=?', (run_id,))
         for app in apps:
             app_id = app["app_id"]
+            boundary_dates = baseline_review_dates(connection, run_id, app_id) if catch_up else {}
             for _ in range(pages):
                 job = connection.execute("SELECT * FROM play_jobs WHERE run_id=? AND app_id=?", (run_id, app_id)).fetchone()
                 if job["status"] in ("source_end", "stalled", "quality_error"):
                     break
-                if catch_up and (job['pages'] >= max_pages or catchup_boundary(connection, run_id, app_id)):
+                if catch_up and (job['pages'] >= max_pages or
+                                 qualified_catchup_ids(connection, run_id, app_id, boundary_dates)):
                     break
                 if overlap_run:
                     observed = {row[0] for row in connection.execute(
@@ -361,6 +363,55 @@ def catchup_boundary(connection, run_id, app_id):
         WHERE o.run_id=? AND o.app_id=?''', (run_id, app_id)).fetchone()[0]
 
 
+def baseline_review_dates(connection, run_id, app_id):
+    ids = {r[0] for r in connection.execute('''SELECT review_id FROM play_catchup_baseline
+        WHERE run_id=? AND app_id=?''', (run_id, app_id))}
+    origin = run_id
+    visited = set()
+    while origin not in visited:
+        visited.add(origin)
+        prior = connection.execute('''SELECT inherited_from_run FROM play_catchup_origins
+            WHERE run_id=? AND app_id=?''', (origin, app_id)).fetchone()
+        if not prior:
+            break
+        origin = prior[0]
+    started = connection.execute('SELECT started_at FROM collection_runs WHERE run_id=?', (origin,)).fetchone()[0]
+    dates = {}
+    # Reconstruct the frozen dates from immutable snapshots, never from the
+    # already-updated reviews table or the partial head of an inherited run.
+    for page in connection.execute('''SELECT records_json,collected_at FROM play_pages
+        WHERE app_id=? AND collected_at<? ORDER BY collected_at,rowid''', (app_id, started)):
+        dates.update(normalized_page_dates(page[0], app_id, page[1], ids))
+    return dates
+
+
+def normalized_page_dates(records_json, app_id, collected_at, ids):
+    dates = {}
+    for raw in json.loads(records_json):
+        if not isinstance(raw, dict):
+            continue
+        key = raw.get('reviewId')
+        if key not in ids or key in dates:
+            continue
+        try:
+            review = normalize_review(raw, app_id=app_id,
+                                      source_url=app_url(app_id, 'en', 'us'), collected_at=collected_at)
+            dates[key] = timestamp(review.review_at)
+        except (ValueError, TypeError):
+            continue
+    return dates
+
+
+def qualified_catchup_ids(connection, run_id, app_id, dates):
+    stable = set()
+    for page in connection.execute('''SELECT records_json,collected_at FROM play_pages
+        WHERE run_id=? AND app_id=? ORDER BY page''', (run_id, app_id)):
+        for key, review_at in normalized_page_dates(page[0], app_id, page[1], dates).items():
+            if review_at == dates[key]:
+                stable.add(key)
+    return stable
+
+
 def freeze_catchup_baseline(connection, run_id, app_id):
     prior = connection.execute('''SELECT r.run_id,r.report_json FROM collection_runs r
         JOIN play_jobs j USING(run_id) WHERE j.app_id=? AND r.run_id<>?
@@ -439,14 +490,19 @@ def summarize(connection: sqlite3.Connection, run_id: str, config: dict) -> dict
         can_resume = job['status'] in ('paused', 'failed', 'pending')
         if config.get('catch_up'):
             shared = catchup_boundary(connection, run_id, job['app_id'])
+            dates = baseline_review_dates(connection, run_id, job['app_id'])
+            qualified = len(qualified_catchup_ids(connection, run_id, job['app_id'], dates))
             baseline_count = connection.execute('''SELECT count(*) FROM play_catchup_baseline
                 WHERE run_id=? AND app_id=?''', (run_id, job['app_id'])).fetchone()[0]
             clean_page = job['status'] in ('paused', 'source_end')
-            reason = (job['status'] if not clean_page else 'known_id_reached' if shared else
+            reason = (job['status'] if not clean_page else 'known_id_reached' if qualified else
                       'source_end' if job['status'] == 'source_end' else
                       'page_limit' if job['pages'] >= config['max_pages'] else 'invocation_limit')
-            resolved = clean_page and (bool(shared) or job['status'] == 'source_end')
+            resolved = clean_page and (bool(qualified) or job['status'] == 'source_end')
             catchup = dict(stop_reason=reason, baseline_ids=baseline_count, known_ids_observed=shared,
+                           qualified_boundary_ids=qualified, baseline_dates_available=len(dates),
+                           nonqualifying_known_ids=shared - qualified,
+                           boundary_rule='known_id_with_stable_review_timestamp_v1',
                            max_pages=config['max_pages'], max_requested_records=config['max_pages'] * config['count'],
                            boundary_resolved=resolved, gap_risk=not resolved, complete_coverage=False)
             origin = connection.execute('''SELECT inherited_from_run FROM play_catchup_origins
