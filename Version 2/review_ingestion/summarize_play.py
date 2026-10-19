@@ -74,6 +74,7 @@ def summarize(reports: list[dict]) -> dict:
                     protocol={**{k: config.get(k) for k in ('lang', 'country', 'count', 'sort', 'adapter', 'package')},
                               'overlap_run': config.get('overlap_run'),
                               'catch_up': config.get('catch_up', False),
+                              'boundary_rule': catchup.get('boundary_rule', 'known_id_v1') if catchup else None,
                               'max_pages': config.get('max_pages')},
                     pages=app['pages']))
     rows.sort(key=lambda r: (timestamp(r['observed_at']).timestamp() if r['observed_at'] else float('-inf'),
