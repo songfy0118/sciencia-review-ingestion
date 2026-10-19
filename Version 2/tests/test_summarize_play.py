@@ -127,3 +127,12 @@ class SummaryTests(unittest.TestCase):
         self.assertTrue(row['valid_collection'])
         self.assertFalse(row['source_quality_ok'])
         self.assertEqual(row['catch_up']['stop_reason'], 'page_limit')
+
+    def test_boundary_rule_changes_form_separate_protocol_groups(self):
+        old = report('a', '2026-10-07T10:00:00Z')
+        new = report('b', '2026-10-08T10:00:00Z')
+        for item in (old, new):
+            item['runs'][0]['config'].update(catch_up=True, max_pages=10)
+            item['runs'][0]['apps'][0]['catch_up'] = dict(gap_risk=False)
+        new['runs'][0]['apps'][0]['catch_up']['boundary_rule'] = 'known_id_with_stable_review_timestamp_v1'
+        self.assertEqual(len(summarize([old, new])['coverage']), 2)
