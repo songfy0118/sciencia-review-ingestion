@@ -1,5 +1,10 @@
 # Duolingo catch-up closure - October 16
 
+Historical result: the [October 19 cross-day test](crossday-catchup-2026-10-19.md)
+subsequently exposed premature ID-only stops for date-changed reviews. The current
+collector requires an unchanged frozen review timestamp as well as a known ID.
+Read the counts below as the October 16 experiment, not the latest stopping guarantee.
+
 ## Outcome
 
 The previously unresolved Duolingo target was reached on **page 42**, below the explicitly extended **50-page** total cap. The boundary page contains **32 IDs from the original frozen target**. The workflow stopped without requesting page 43.
