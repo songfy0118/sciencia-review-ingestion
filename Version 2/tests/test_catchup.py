@@ -13,8 +13,11 @@ from review_ingestion.google_play_cli import assessment_status, main, persist_as
 from review_ingestion.play_pipeline import SourceError, run_once
 
 
+REVIEW_TIME = utc_now()
+
+
 def record(key, **changes):
-    return dict(reviewId=key, content='Review', score=4, at=utc_now()) | changes
+    return dict(reviewId=key, content='Review', score=4, at=REVIEW_TIME) | changes
 
 
 class CatchupTests(unittest.TestCase):
@@ -145,6 +148,54 @@ class CatchupTests(unittest.TestCase):
             run_once(**(args | dict(catch_up=False)), resume=first['run_id'], extend_max_pages=True)
         self.assertEqual(self.query('SELECT pages FROM play_jobs WHERE run_id=?', (first['run_id'],)), [(1,)])
 
+    def test_redated_known_review_does_not_stop_before_stable_boundary(self):
+        self.seed(2)
+        calls = []
+        def fetch(**r):
+            calls.append(r['cursor'])
+            if len(calls) == 1:
+                return dict(records=[record('new'), record('old-0', at=utc_now())], cursor='after-edit')
+            return dict(records=[record('more-new'), record('old-1')], cursor='after-boundary')
+        result = run_once(**(self.args | dict(apps=self.apps[:1])), fetcher=fetch)
+        app = result['apps'][0]
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(app['new_records'], 2)
+        self.assertEqual(app['catch_up']['known_ids_observed'], 2)
+        self.assertEqual(app['catch_up']['qualified_boundary_ids'], 1)
+        self.assertEqual(app['catch_up']['nonqualifying_known_ids'], 1)
+        self.assertTrue(app['catch_up']['boundary_resolved'])
+
+    def test_redated_boundary_resume_uses_original_snapshot_not_updated_table(self):
+        self.seed(1)
+        args = self.args | dict(apps=self.apps[:1], pages=1)
+        first = run_once(**args, fetcher=lambda **_: dict(records=[record('old-0', at=utc_now())], cursor='after-edit'))
+        self.assertTrue(first['apps'][0]['catch_up']['gap_risk'])
+        self.assertTrue(first['apps'][0]['can_resume'])
+        result = run_once(**args, resume=first['run_id'],
+                          fetcher=lambda **_: dict(records=[record('new'), record('old-0')], cursor='after-stable'))
+        self.assertEqual(result['apps'][0]['pages'], 2)
+        self.assertEqual(result['apps'][0]['catch_up']['qualified_boundary_ids'], 1)
+
+    def test_duplicate_raw_entry_cannot_fabricate_stable_boundary(self):
+        self.seed(1)
+        result = run_once(**(self.args | dict(apps=self.apps[:1], max_pages=1)),
+                          fetcher=lambda **_: dict(records=[record('old-0', at=utc_now()), record('old-0')], cursor='next'))
+        self.assertEqual(result['apps'][0]['duplicates'], 1)
+        self.assertEqual(result['apps'][0]['catch_up']['qualified_boundary_ids'], 0)
+        self.assertTrue(result['apps'][0]['catch_up']['gap_risk'])
+
+    def test_inherited_redated_id_keeps_original_frozen_date(self):
+        self.seed(1)
+        edited = utc_now()
+        args = self.args | dict(apps=self.apps[:1], max_pages=1)
+        fetch = lambda **_: dict(records=[record('old-0', at=edited)], cursor='next')
+        first = run_once(**args, fetcher=fetch)
+        again = run_once(**args, fetcher=fetch)
+        app = again['apps'][0]
+        self.assertEqual(app['catch_up']['inherited_from_run'], first['run_id'])
+        self.assertEqual(app['catch_up']['qualified_boundary_ids'], 0)
+        self.assertTrue(app['catch_up']['gap_risk'])
+
     def test_fresh_run_cannot_hide_prior_cap_behind_partial_new_head(self):
         self.seed(1)
         args = self.args | dict(apps=self.apps[:1], max_pages=1)
@@ -243,7 +294,7 @@ class CatchupTests(unittest.TestCase):
 
     def test_cli_explicit_extension_preserves_cap_history(self):
         self.seed(1)
-        review_time = utc_now()
+        review_time = REVIEW_TIME
         first = run_once(**(self.args | dict(max_pages=1)),
                          fetcher=lambda **_: dict(records=[record('new', at=review_time)], cursor='saved'))
         root = Path(self.folder.name)
