@@ -1,5 +1,9 @@
 # October 16: bounded incremental catch-up
 
+October 19 update: ID-only stopping can be premature when a known review returns
+with a changed date. The [cross-day fix and results](crossday-catchup-2026-10-19.md)
+supersede the boundary rule described in this historical report.
+
 Follow-up: the initially capped Duolingo target was subsequently reached on page 42
 after an explicitly authorized cap extension. See the [closure report and latest tests](duolingo-catchup-completed-2026-10-16.md).
 The live tables and 114-test result below preserve the initial experiment; they are not the latest state.
